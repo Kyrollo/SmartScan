@@ -2,9 +2,13 @@ package com.SmartScan.ScanItems;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
+
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioGroup;
@@ -21,14 +25,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.SmartScan.API.APIService;
 import com.SmartScan.Adapters.ItemAdapter;
+import com.SmartScan.Adapters.UnregisteredTagsAdapter;
 import com.SmartScan.ApiClasses.ItemResponse;
 import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Item;
 import com.zebra.rfid.api3.TagData;
 
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import retrofit2.Call;
@@ -43,14 +51,19 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     private Button btnDownload, btnDeleteAll;
     private RecyclerView recyclerView;
     private ItemAdapter itemAdapter;
+    private RecyclerView unregisteredTagsRecyclerView;
+    private UnregisteredTagsAdapter unregisteredTagsAdapter;
     private List<Item> itemList;
-    public TextView statusTextViewRFID = null;
     private Set<String> uniqueTagIDs = new HashSet<>();
     private Set<String> unregisteredTags = new HashSet<>();
     private RFIDHandlerItems rfidHandler;
     private RadioGroup radioGroupTags;
-    private TextView unregisteredTagsTextView;
+    private Item randomItem;
+    TextView uniqueCountData, registeredCountData, unregisteredCountData;
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
+    private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
+    private static final int REQUEST_IMAGE_CAPTURE = 1;
+
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -61,7 +74,6 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         btnDownload = findViewById(R.id.btnDownload);
         btnDeleteAll = findViewById(R.id.btnDeleteAll);
         recyclerView = findViewById(R.id.recyclerViewItems);
-        statusTextViewRFID = (TextView) findViewById(R.id.textViewStatusrfid);
         rfidHandler = new RFIDHandlerItems();
 
         Retrofit retrofit = new Retrofit.Builder()
@@ -72,6 +84,18 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         apiService = retrofit.create(APIService.class);
 
         initializePage();
+
+        radioGroupTags.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.radioRegisteredTags) {
+                updateRecyclerView();
+                recyclerView.setVisibility(View.VISIBLE);
+                unregisteredTagsRecyclerView.setVisibility(View.GONE);
+            } else if (checkedId == R.id.radioUnregisteredTags) {
+                updateUnregisteredTagsRecyclerView();
+                recyclerView.setVisibility(View.GONE);
+                unregisteredTagsRecyclerView.setVisibility(View.VISIBLE);
+            }
+        });
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
@@ -86,32 +110,37 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
             rfidHandler.onCreate(this);
         }
 
-        radioGroupTags.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.radioRegisteredTags) {
-                recyclerView.setVisibility(View.VISIBLE);
-                unregisteredTagsTextView.setVisibility(View.GONE);
-                updateRecyclerView();
-            } else if (checkedId == R.id.radioUnregisteredTags) {
-                recyclerView.setVisibility(View.GONE);
-                unregisteredTagsTextView.setVisibility(View.VISIBLE);
-                displayUnregisteredTags();
-            }
-        });
     }
 
     private void initializePage() {
         db = AppDataBase.getDatabase(this);
 
+        itemList = db.itemDao().getAllItems();
+
+        radioGroupTags = findViewById(R.id.radioGroupTags);
+
         recyclerView = findViewById(R.id.recyclerViewItems);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        itemList = db.itemDao().getAllItems();
+
         itemAdapter = new ItemAdapter(itemList);
         recyclerView.setAdapter(itemAdapter);
-        radioGroupTags = findViewById(R.id.radioGroupTags);
-        unregisteredTagsTextView = findViewById(R.id.unregisteredTagsTextView);
+
+        unregisteredTagsRecyclerView = findViewById(R.id.recyclerViewUnregisteredTags);
+        unregisteredTagsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        unregisteredTagsAdapter = new UnregisteredTagsAdapter(unregisteredTags);
+        unregisteredTagsRecyclerView.setAdapter(unregisteredTagsAdapter);
+
+        uniqueCountData = findViewById(R.id.uniqueCountData);
+        registeredCountData = findViewById(R.id.registeredCountData);
+        unregisteredCountData = findViewById(R.id.unregisteredCountData);
 
         btnDeleteAll.setOnClickListener(view -> showDeleteDialog());
         btnDownload.setOnClickListener(view -> testConnection(this::fetchItems));
+
+        recyclerView.setVisibility(View.VISIBLE);
+        unregisteredTagsRecyclerView.setVisibility(View.GONE);
+        updateCountTextViews();
     }
 
     private void showDeleteDialog() {
@@ -132,6 +161,8 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         db.itemDao().deleteAll();
         db.itemDao().resetPrimaryKey();
         updateRecyclerView();
+        unregisteredTags.clear();
+        updateUnregisteredTagsRecyclerView();
         Toast.makeText(this, "All Data Deleted", Toast.LENGTH_SHORT).show();
     }
 
@@ -190,6 +221,25 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     private void updateRecyclerView() {
         itemList = db.itemDao().getAllItems();
         itemAdapter.updateData(itemList);
+        updateCountTextViews();
+    }
+
+    private void updateUnregisteredTagsRecyclerView() {
+        runOnUiThread(() -> {
+            unregisteredTagsAdapter = new UnregisteredTagsAdapter(unregisteredTags);
+            unregisteredTagsRecyclerView.setAdapter(unregisteredTagsAdapter);
+            updateCountTextViews();
+        });
+    }
+
+    private void updateCountTextViews() {
+        int registeredCount = itemList.size();
+        int unregisteredCount = unregisteredTags.size();
+        int uniqueCount = registeredCount + unregisteredCount;
+
+        uniqueCountData.setText(String.valueOf(uniqueCount));
+        registeredCountData.setText(String.valueOf(registeredCount));
+        unregisteredCountData.setText(String.valueOf(unregisteredCount));
     }
 
     private void changeItemStatus(String tagId) {
@@ -197,24 +247,76 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
 
         if (item == null) {
             unregisteredTags.add(tagId);
-            displayUnregisteredTags();
-        }
-        else if (item != null && item.getStatus() != "Found") {
+            updateUnregisteredTagsRecyclerView();
+        } else if (item != null && item.getStatus() != "Found") {
             db.itemDao().updateItemStatusToFound(tagId);
         }
     }
 
-    private void displayUnregisteredTags() {
-        StringBuilder tagsText = new StringBuilder();
-        for (String tag : unregisteredTags) {
-            tagsText.append(tag).append("\n");
-        }
-        if (tagsText.length() == 0) {
-            unregisteredTagsTextView.setText("No Unregistered Tags Scanned");
+    private void showValidationDialog() {
+        if (itemList == null || itemList.isEmpty()) {
+            finish();
             return;
         }
-        unregisteredTagsTextView.setText(tagsText.toString());
+
+        randomItem = itemList.get(new Random().nextInt(itemList.size()));
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Validation Required");
+        builder.setMessage("Please take a photo of the following item:\n" +
+                "Item Barcode:  " + randomItem.getItemBarCode() + "\n" +
+                "Item Description:  " + randomItem.getItemDesc() + "\n" +
+                "Item Status:   " + randomItem.getStatus());
+
+        builder.setPositiveButton("Take Photo", (dialog, which) -> {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
+            } else {
+                startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), REQUEST_IMAGE_CAPTURE);
+
+            }
+        });
+
+//        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(false);
+        dialog.show();
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_IMAGE_CAPTURE) {
+            if (resultCode == RESULT_OK) {
+                if (data != null) {
+                    Bitmap bitmap = data.getParcelableExtra("data");
+                    if (bitmap != null) {
+                        byte[] imageData = bitmapToByteArray(bitmap);
+                        db.itemDao().updateItemImage(imageData, randomItem.getItemBarCode());
+                        finish();
+                    }
+                } else {
+                    showValidationDialog();
+                }
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Photo not taken", Toast.LENGTH_SHORT).show();
+                showValidationDialog();
+            }
+        }
+    }
+
+    private byte[] bitmapToByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        return stream.toByteArray();
+    }
+
+    @SuppressLint("MissingSuperCall")
+    @Override
+    public void onBackPressed() {
+        showValidationDialog();
+    }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -228,19 +330,25 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
             }
         }
 
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                openCamera();
+                startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), REQUEST_IMAGE_CAPTURE);
+            } else {
+                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-    }
+    protected void onPause() {super.onPause();}
 
     @Override
     protected void onPostResume() {
         super.onPostResume();
-        String result = rfidHandler.onResume();
-        statusTextViewRFID.setText(result);
+        rfidHandler.onResume();
     }
 
     @Override

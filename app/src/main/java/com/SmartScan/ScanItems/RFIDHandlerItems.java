@@ -40,7 +40,6 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     private ArrayList<ReaderDevice> availableRFIDReaderList;
     private ReaderDevice readerDevice;
     private RFIDReader reader;
-    TextView textView;
     private EventHandler eventHandler;
     private ScanItems context;
     private SDKHandler sdkHandler;
@@ -52,7 +51,6 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
 
     void onCreate(ScanItems activity) {
         context = activity;
-        textView = activity.statusTextViewRFID;
         scannerList = new ArrayList<>();
         InitSDK();
     }
@@ -195,7 +193,6 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            textView.setText(result);
         }
     }
 

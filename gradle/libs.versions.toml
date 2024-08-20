@@ -1,5 +1,5 @@
 [versions]
-agp = "8.5.1"
+agp = "8.5.2"
 appcompatVersion = "1.3.0"
 composeBom = "2024.1.1"
 constraintlayoutVersion = "2.0.4"

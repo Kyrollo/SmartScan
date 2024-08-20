@@ -1,47 +1,123 @@
-<!-- res/layout/item_row.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="8dp">
+    android:orientation="vertical"
+    android:padding="12dp">
 
-    <TextView
-        android:id="@+id/tvItemBarCode"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="0.6"
-        android:textAlignment="center"
-        android:text="Item BarCode" />
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Item Bar Code:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvItemBarCode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2.4"
+            android:text="barcode" />
+    </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvItemDesc"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1.5"
-        android:textAlignment="center"
-        android:text="Item Desc" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5dp" />
 
-    <TextView
-        android:id="@+id/tvRemark"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:textAlignment="center"
-        android:text="Remark" />
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Item Desc:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvItemDesc"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2.4"
+            android:text="description" />
+    </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvOpt3"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:textAlignment="center"
-        android:text="OPT3" />
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5dp" />
 
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="0.8"
-        android:textAlignment="center"
-        android:text="Status" />
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Remark:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvRemark"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2.4"
+            android:text="remark" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="OPT3:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvOpt3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2.4"
+            android:text="opt3" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="5dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Status:"
+            android:textStyle="bold"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2.4"
+            android:text="status" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="18dp"
+        android:background="#CCCCCCCC" />
 </LinearLayout>

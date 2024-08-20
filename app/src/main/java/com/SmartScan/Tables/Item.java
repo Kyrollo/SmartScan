@@ -1,8 +1,14 @@
 package com.SmartScan.Tables;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
+
+import java.io.ByteArrayOutputStream;
 
 @Entity(tableName = "item")
 public class Item {
@@ -23,6 +29,12 @@ public class Item {
 
     @ColumnInfo(name = "status")
     public String status;
+
+    @Ignore
+    public Bitmap image;
+
+    @ColumnInfo(name = "image_data")
+    public byte[] imageData;
 
     public Item() {
     }
@@ -81,5 +93,33 @@ public class Item {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Bitmap getImage() {
+        return image = byteArrayToBitmap(imageData);
+    }
+
+    public void setImage(Bitmap image) {
+        this.image = image;
+        this.imageData = bitmapToByteArray(image);
+    }
+
+    public byte[] getImageData() {
+        return imageData;
+    }
+
+    public void setImageData(byte[] imageData) {
+        this.imageData = imageData;
+        this.image = byteArrayToBitmap(imageData);
+    }
+
+    private byte[] bitmapToByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        return stream.toByteArray();
+    }
+
+    private Bitmap byteArrayToBitmap(byte[] byteArray) {
+        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
     }
 }

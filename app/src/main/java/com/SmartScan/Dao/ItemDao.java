@@ -1,5 +1,7 @@
 package com.SmartScan.Dao;
 
+import android.graphics.Bitmap;
+
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
@@ -19,6 +21,9 @@ public interface ItemDao {
 
     @Query("UPDATE item SET status = 'Found' WHERE opt3 = :opt3")
     void updateItemStatusToFound(String opt3);
+
+    @Query("UPDATE item SET image_data = :imageData WHERE item_bar_code = :barcode")
+    void updateItemImage(byte[] imageData, String barcode);
 
     @Query("SELECT * FROM item")
     List<Item> getAllItems();
