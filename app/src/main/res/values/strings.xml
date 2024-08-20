@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Smart Scan</string>
+    <string name="deleteAllDialog">Delete All Data</string>
+    <string name="confirmDeleteDialog">Are you sure you want to delete all data?</string>
+    <string name="yesDeleteDialog">Yes</string>
+    <string name="noDeleteDialog">No</string>
+    <string name="dataDeleted">All data deleted successfully</string>
+</resources>
