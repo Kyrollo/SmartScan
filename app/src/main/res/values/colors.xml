@@ -3,6 +3,17 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="red">#FF0000</color>
+    <color name="hint">#DFDCDC</color>
     <color name="tags">#0B91A8</color>
     <color name="tagsCount">#46AC4B</color>
+    <color name="editText">#186790</color>
+    <color name="edittextStroke">#228CC3</color>
+    <color name="button">#cc2330</color>
+    <color name="button2">#30A844</color>
+    <color name="button3">#C53E3E</color>
+    <color name="g1">#6FD1FF</color>
+    <color name="g2">#186790</color>
+    <color name="g3">#145A7E</color>
+    <color name="linkColor">#F3F7FD</color>
+    <color name="pageName">#024568</color>
 </resources>

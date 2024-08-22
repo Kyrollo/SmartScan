@@ -92,8 +92,7 @@
             android:text="Unique Tags:"
             android:textSize="17sp"
             android:textColor="@color/tags"
-            android:gravity="center"
-            android:visibility="visible" />
+            android:gravity="center"/>
 
         <TextView
             android:id="@+id/registeredCount"
@@ -102,8 +101,7 @@
             android:layout_weight="1"
             android:text="Registered Tags:"
             android:textColor="@color/tags"
-            android:gravity="center"
-            android:visibility="visible" />
+            android:gravity="center" />
 
         <TextView
             android:id="@+id/unregisteredCount"
@@ -112,8 +110,7 @@
             android:layout_weight="1"
             android:text="Unregistered Tags:"
             android:textColor="@color/tags"
-            android:gravity="center"
-            android:visibility="visible" />
+            android:gravity="center" />
     </LinearLayout>
 
     <LinearLayout
@@ -133,8 +130,7 @@
             android:text="0"
             android:textSize="18sp"
             android:textColor="@color/tagsCount"
-            android:gravity="center"
-            android:visibility="visible" />
+            android:gravity="center" />
 
         <TextView
             android:id="@+id/registeredCountData"
@@ -144,8 +140,7 @@
             android:text="0"
             android:textSize="18sp"
             android:textColor="@color/tagsCount"
-            android:gravity="center"
-            android:visibility="visible" />
+            android:gravity="center" />
 
         <TextView
             android:id="@+id/unregisteredCountData"
@@ -155,8 +150,7 @@
             android:text="0"
             android:textSize="18sp"
             android:textColor="@color/tagsCount"
-            android:gravity="center"
-            android:visibility="visible" />
+            android:gravity="center" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -164,6 +158,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="5dp"
+        android:visibility="visible"
         app:layout_constraintTop_toBottomOf="@id/countTagsData"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

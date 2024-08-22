@@ -5,4 +5,14 @@
     <string name="yesDeleteDialog">Yes</string>
     <string name="noDeleteDialog">No</string>
     <string name="dataDeleted">All data deleted successfully</string>
+    <string name="write_your_password">Write your password</string>
+    <string name="write_your_username">Write your username</string>
+    <string name="log_in">Log In</string>
+    <string name="configure_your_server"><u>Server Configuration</u></string>
+    <string name="ip_address">IP Address</string>
+    <string name="port">Port</string>
+    <string name="test_connection">Test Connection</string>
+    <string name="save">Save</string>
+    <string name="server_configuration">Server Configuration</string>
+    <string name="test_connection_first">Please test the connection first</string>
 </resources>

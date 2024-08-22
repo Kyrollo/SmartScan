@@ -33,7 +33,6 @@ import com.SmartScan.Tables.Item;
 import com.zebra.rfid.api3.TagData;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -263,10 +262,10 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Validation Required");
-        builder.setMessage("Please take a photo of the following item:\n" +
-                "Item Barcode:  " + randomItem.getItemBarCode() + "\n" +
-                "Item Description:  " + randomItem.getItemDesc() + "\n" +
-                "Item Status:   " + randomItem.getStatus());
+        builder.setMessage("Please take a photo of the following item:\n\n" +
+                "Item Barcode:       " + randomItem.getItemBarCode() + "\n\n" +
+                "Item Description:  " + randomItem.getItemDesc() + "\n\n" +
+                "Item Status:           " + randomItem.getStatus());
 
         builder.setPositiveButton("Take Photo", (dialog, which) -> {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -277,7 +276,6 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
             }
         });
 
-//        builder.create().show();
         AlertDialog dialog = builder.create();
         dialog.setCancelable(false);
         dialog.show();
@@ -332,7 +330,6 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
 
         if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                openCamera();
                 startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), REQUEST_IMAGE_CAPTURE);
             } else {
                 Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
