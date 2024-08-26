@@ -1,6 +1,6 @@
 package com.SmartScan.API;
 
-import com.SmartScan.ApiClasses.ItemResponse;
+import com.SmartScan.ApiClasses.*;
 
 import java.util.List;
 
@@ -13,4 +13,19 @@ public interface APIService {
 
     @GET("api/DownloadData/GetAllItems")
     Call<List<ItemResponse>> getItems();
+
+    @GET("api/Connection/GetAllUsers")
+    Call<List<UserResponse>> getUsers();
+
+    @GET("api/DownloadData/GetCategories")
+    Call<List<CategoryResponse>> getCategories();
+
+    @GET("api/DownloadData/GetLocation")
+    Call<List<LocationResponse>> getLocation();
+
+    @GET("api/DownloadData/GetStatusList")
+    Call<List<StatusResponse>> getStatus();
+
+    @GET("api/DownloadData/GetAll_Inventory_H")
+    Call<List<InventoryH_Response>> getInventoryH();
 }

@@ -13,7 +13,7 @@ import java.io.ByteArrayOutputStream;
 @Entity(tableName = "item")
 public class Item {
     @PrimaryKey(autoGenerate = true)
-    public int itemId;
+    public int id;
 
     @ColumnInfo(name = "item_bar_code")
     public String itemBarCode;
@@ -30,6 +30,21 @@ public class Item {
     @ColumnInfo(name = "status")
     public String status;
 
+    @ColumnInfo(name = "item_id")
+    public int ItemID;
+
+    @ColumnInfo(name = "category_id")
+    public String CategoryID;
+
+    @ColumnInfo(name = "location_id")
+    public String LocationID;
+
+    @ColumnInfo(name = "status_id")
+    public int StatusID;
+
+    @ColumnInfo(name = "item_sn")
+    public String ItemSN;
+
     @Ignore
     public Bitmap image;
 
@@ -39,20 +54,75 @@ public class Item {
     public Item() {
     }
 
-    public Item(String itemBarCode, String itemDesc, String remark, String opt3) {
+    public Item(String itemBarCode, String itemDesc, String remark, String opt3, String status, int itemID, String
+            categoryID, String locationID, int statusID, String itemSN) {
         this.itemBarCode = itemBarCode;
         this.itemDesc = itemDesc;
         this.remark = remark;
         this.opt3 = opt3;
-        this.status = "Missing";
+        this.status = status;
+        ItemID = itemID;
+        CategoryID = categoryID;
+        LocationID = locationID;
+        StatusID = statusID;
+        ItemSN = itemSN;
+    }
+
+    // Getters and Setters
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getItemID() {
+        return ItemID;
+    }
+
+    public void setItemID(int itemID) {
+        ItemID = itemID;
+    }
+
+    public String getCategoryID() {
+        return CategoryID;
+    }
+
+    public void setCategoryID(String categoryID) {
+        CategoryID = categoryID;
+    }
+
+    public String getLocationID() {
+        return LocationID;
+    }
+
+    public void setLocationID(String locationID) {
+        LocationID = locationID;
+    }
+
+    public int getStatusID() {
+        return StatusID;
+    }
+
+    public void setStatusID(int statusID) {
+        StatusID = statusID;
+    }
+
+    public String getItemSN() {
+        return ItemSN;
+    }
+
+    public void setItemSN(String itemSN) {
+        ItemSN = itemSN;
     }
 
     public int getItemId() {
-        return itemId;
+        return id;
     }
 
     public void setItemId(int itemId) {
-        this.itemId = itemId;
+        this.id = itemId;
     }
 
     public String getItemBarCode() {

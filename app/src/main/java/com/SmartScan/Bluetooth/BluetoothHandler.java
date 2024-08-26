@@ -1,4 +1,4 @@
-package com.SmartScan.ScanAndCount;
+package com.SmartScan.Bluetooth;
 
 import android.os.AsyncTask;
 import android.util.Log;
@@ -33,80 +33,57 @@ import com.zebra.scannercontrol.FirmwareUpdateEvent;
 import com.zebra.scannercontrol.IDcsSdkApiDelegate;
 import com.zebra.scannercontrol.SDKHandler;
 
-public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEventHandler {
+public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderEventHandler {
     final static String TAG = "RFID_SAMPLE";
     private Readers readers;
     private ArrayList<ReaderDevice> availableRFIDReaderList;
     private ReaderDevice readerDevice;
     private RFIDReader reader;
-    TextView textView;
     private EventHandler eventHandler;
-    private ScanAndCount context;
+    private BluetoothConnectionActivity context;
     private SDKHandler sdkHandler;
     private ArrayList<DCSScannerInfo> scannerList;
     private int scannerID;
-    static MyAsyncTask cmdExecTask = null;
+    TextView textView;
     private int MAX_POWER = 270;
     String readerName = "RFD4031-G10B700-US";
 
-    void onCreate(ScanAndCount activity) {
+    void onCreate(BluetoothConnectionActivity activity) {
         context = activity;
-        textView = activity.textViewStatusrfid;
+        textView = activity.textViewStatusRFID;
         scannerList = new ArrayList<>();
         InitSDK();
     }
 
     @Override
-    public void dcssdkEventScannerAppeared(DCSScannerInfo dcsScannerInfo) {
-
-    }
+    public void dcssdkEventScannerAppeared(DCSScannerInfo dcsScannerInfo) {}
 
     @Override
-    public void dcssdkEventScannerDisappeared(int i) {
-
-    }
+    public void dcssdkEventScannerDisappeared(int i) {}
 
     @Override
-    public void dcssdkEventCommunicationSessionEstablished(DCSScannerInfo dcsScannerInfo) {
-
-    }
+    public void dcssdkEventCommunicationSessionEstablished(DCSScannerInfo dcsScannerInfo) {}
 
     @Override
-    public void dcssdkEventCommunicationSessionTerminated(int i) {
-
-    }
+    public void dcssdkEventCommunicationSessionTerminated(int i) {}
 
     @Override
-    public void dcssdkEventBarcode(byte[] barcodeData, int barcodeType, int fromScannerID) {
-        String s = new String(barcodeData);
-        context.barcodeData(s);
-        Log.d(TAG,"barcaode ="+ s);
-    }
+    public void dcssdkEventBarcode(byte[] barcodeData, int barcodeType, int fromScannerID) {}
 
     @Override
-    public void dcssdkEventImage(byte[] bytes, int i) {
-
-    }
+    public void dcssdkEventImage(byte[] bytes, int i) {}
 
     @Override
-    public void dcssdkEventVideo(byte[] bytes, int i) {
-
-    }
+    public void dcssdkEventVideo(byte[] bytes, int i) {}
 
     @Override
-    public void dcssdkEventBinaryData(byte[] bytes, int i) {
-
-    }
+    public void dcssdkEventBinaryData(byte[] bytes, int i) {}
 
     @Override
-    public void dcssdkEventFirmwareUpdate(FirmwareUpdateEvent firmwareUpdateEvent) {
-
-    }
+    public void dcssdkEventFirmwareUpdate(FirmwareUpdateEvent firmwareUpdateEvent) {}
 
     @Override
-    public void dcssdkEventAuxScannerAppeared(DCSScannerInfo dcsScannerInfo, DCSScannerInfo dcsScannerInfo1) {
-
-    }
+    public void dcssdkEventAuxScannerAppeared(DCSScannerInfo dcsScannerInfo, DCSScannerInfo dcsScannerInfo1) {}
 
     private boolean isReaderConnected() {
         if (reader != null && reader.isConnected())
@@ -117,25 +94,14 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
         }
     }
 
-    //
-    //  Activity life cycle behavior
-    //
-
     String onResume() {
         return connect();
-    }
-
-    void onPause() {
-        disconnect();
     }
 
     void onDestroy() {
         dispose();
     }
 
-    //
-    // RFID SDK
-    //
     private void InitSDK() {
         Log.d(TAG, "InitSDK");
         if (readers == null) {
@@ -144,7 +110,6 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
             connectReader();
     }
 
-    // Enumerates SDK based on host device
     private class CreateInstanceTask extends AsyncTask<Void, Void, Void> {
         @Override
         protected Void doInBackground(Void... voids) {
@@ -194,7 +159,6 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
         @Override
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
-            textView.setText(result);
         }
     }
 
@@ -231,11 +195,11 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
         }
     }
 
-    // handler for receiving reader appearance events
     @Override
     public void RFIDReaderAppeared(ReaderDevice readerDevice) {
         Log.d(TAG, "RFIDReaderAppeared " + readerDevice.getName());
         context.sendToast("RFIDReaderAppeared");
+        context.updateRFIDStatus("RFIDReaderAppeared: " + readerDevice.getName());
         connectReader();
     }
 
@@ -243,26 +207,23 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
     public void RFIDReaderDisappeared(ReaderDevice readerDevice) {
         Log.d(TAG, "RFIDReaderDisappeared " + readerDevice.getName());
         context.sendToast("RFIDReaderDisappeared");
+        context.updateRFIDStatus("RFIDReaderDisappeared: " + readerDevice.getName());
         if (readerDevice.getName().equals(reader.getHostName()))
             disconnect();
     }
-
 
     private synchronized String connect() {
         if (reader != null) {
             Log.d(TAG, "connect " + reader.getHostName());
             try {
                 if (!reader.isConnected()) {
-                    // Establish connection to the RFID Reader
                     reader.connect();
                     ConfigureReader();
-
-                    //Call this function if the readerdevice supports scanner to setup scanner SDK
                     setupScannerSDK();
                     if(reader.isConnected()){
+                        context.updateRFIDStatus("Connected: " + reader.getHostName());
                         return "Connected: " + reader.getHostName();
                     }
-
                 }
             } catch (InvalidUsageException e) {
                 e.printStackTrace();
@@ -270,13 +231,13 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
                 e.printStackTrace();
                 Log.d(TAG, "OperationFailureException " + e.getVendorMessage());
                 String des = e.getResults().toString();
+                context.updateRFIDStatus("Connection failed: " + e.getVendorMessage() + " " + des);
                 return "Connection failed" + e.getVendorMessage() + " " + des;
             }
         }
         return "";
     }
 
-    //not needed
     private void ConfigureReader() {
         Log.d(TAG, "ConfigureReader " + reader.getHostName());
         if (reader.isConnected()) {
@@ -395,8 +356,8 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
                     scannerList = null;
                 }
                 reader.disconnect();
+                context.updateRFIDStatus("Disconnected");
                 context.sendToast("Disconnecting reader");
-                //reader = null;
             }
         } catch (InvalidUsageException e) {
             e.printStackTrace();
@@ -421,31 +382,6 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
         }
     }
 
-    synchronized void performInventory() {
-        try {
-            reader.Actions.Inventory.perform();
-        } catch (InvalidUsageException e) {
-            e.printStackTrace();
-        } catch (OperationFailureException e) {
-            e.printStackTrace();
-        }
-    }
-
-    synchronized void stopInventory() {
-        try {
-            reader.Actions.Inventory.stop();
-        } catch (InvalidUsageException e) {
-            e.printStackTrace();
-        } catch (OperationFailureException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void scanCode(){
-        String in_xml = "<inArgs><scannerID>" + scannerID+ "</scannerID></inArgs>";
-        cmdExecTask = new MyAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_DEVICE_PULL_TRIGGER, null);
-        cmdExecTask.execute(new String[]{in_xml});
-    }
 
     private class MyAsyncTask extends AsyncTask<String, Integer, Boolean> {
         int scannerId;
@@ -464,7 +400,6 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
             super.onPreExecute();
 
         }
-
 
         @Override
         protected Boolean doInBackground(String... strings) {
@@ -492,25 +427,19 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
         }
         return false;
     }
-    // Read/Status Notify handler
-    // Implement the RfidEventsLister class to receive event notifications
+
     public class EventHandler implements RfidEventsListener {
-        // Read Event Notification
         public void eventReadNotify(RfidReadEvents e) {
             TagData[] myTags = reader.Actions.getReadTags(100);
             if (myTags != null) {
                 for (int index = 0; index < myTags.length; index++) {
-                    //  Log.d(TAG, "Tag ID " + myTags[index].getTagID());
                     Log.d(TAG, "Tag ID" + myTags[index].getTagID() +"RSSI value "+ myTags[index].getPeakRSSI());
                     Log.d(TAG, "RSSI value "+ myTags[index].getPeakRSSI());
-                    /* To get the RSSI value*/   //   Log.d(TAG, "RSSI value "+ myTags[index].getPeakRSSI());
-
                 }
                 new AsyncDataUpdate().execute(myTags);
             }
         }
 
-        // Status Event Notification
         public void eventStatusNotify(RfidStatusEvents rfidStatusEvents) {
             Log.d(TAG, "Status Notification: " + rfidStatusEvents.StatusEventData.getStatusEventType());
             if (rfidStatusEvents.StatusEventData.getStatusEventType() == STATUS_EVENT_TYPE.HANDHELD_TRIGGER_EVENT) {
@@ -519,7 +448,6 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
                         @Override
                         protected Void doInBackground(Void... voids) {
                             Log.d(TAG,"HANDHELD_TRIGGER_PRESSED");
-                            context.handleTriggerPress(true);
                             return null;
                         }
                     }.execute();
@@ -528,7 +456,6 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
-                            context.handleTriggerPress(false);
                             Log.d(TAG,"HANDHELD_TRIGGER_RELEASED");
                             return null;
                         }
@@ -539,7 +466,6 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
                 new AsyncTask<Void, Void, Void>() {
                     @Override
                     protected Void doInBackground(Void... voids) {
-
                         disconnect();
                         return null;
                     }
@@ -552,20 +478,11 @@ public class RFIDHandlerScan implements IDcsSdkApiDelegate, Readers.RFIDReaderEv
     private class AsyncDataUpdate extends AsyncTask<TagData[], Void, Void> {
         @Override
         protected Void doInBackground(TagData[]... params) {
-            context.handleTagdata(params);
-
             return null;
         }
     }
 
-    interface ResponseHandlerInterface {
-        void handleTagdata(TagData[][] tagData);
-
-        void handleTriggerPress(boolean pressed);
-
-        void barcodeData(String val);
+    public interface BluetoothHandlerHandler {
         void sendToast(String val);
-        //void handleStatusEvents(Events.StatusEventData eventData);
     }
-
 }

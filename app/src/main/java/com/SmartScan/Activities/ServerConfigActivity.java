@@ -1,6 +1,7 @@
 package com.SmartScan.Activities;
 
 import android.content.Context;
+
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
@@ -9,9 +10,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.SmartScan.ApiClasses.UserResponse;
 import com.SmartScan.API.APIService;
+import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.Server.ServerConfig;
 import com.SmartScan.R;
+import com.SmartScan.Tables.Users;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -26,6 +32,10 @@ public class ServerConfigActivity extends AppCompatActivity {
     private APIService apiService;
     private ServerConfig config = new ServerConfig();
     private SharedPreferences sharedPreferences;
+    private List<UserResponse> users;
+    private AppDataBase db;;
+    private String ip;
+    private int port;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,17 +49,22 @@ public class ServerConfigActivity extends AppCompatActivity {
 
         sharedPreferences = getSharedPreferences("ServerConfig", Context.MODE_PRIVATE);
 
+        ip = sharedPreferences.getString("ip", "");
+        port = sharedPreferences.getInt("port", -1);
+
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.77:8080/")
+                .baseUrl("http://" + ip + ":" + port + "/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
         apiService = retrofit.create(APIService.class);
 
+        db = AppDataBase.getDatabase(this);
+
         loadServerConfig();
 
         testConnectionButton.setOnClickListener(v -> {
-            testConnection();
+            testConnection(this::fetchUsers);
         });
 
         saveButton.setOnClickListener(v -> {
@@ -57,32 +72,66 @@ public class ServerConfigActivity extends AppCompatActivity {
                 Toast.makeText(this, getString(R.string.test_connection_first), Toast.LENGTH_SHORT).show();
                 return;
             }
-            String ip = ipEditText.getText().toString();
-            int port = Integer.parseInt(portEditText.getText().toString());
+            ip = ipEditText.getText().toString();
+            port = Integer.parseInt(portEditText.getText().toString());
             config.setIp(ip);
             config.setPort(port);
             saveServerConfig(config);
         });
     }
 
-    private void testConnection() {
+    private void testConnection(Runnable onSuccess) {
         apiService.testConnection().enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
                 if (response.isSuccessful() && "Success".equals(response.body())) {
                     isTested = true;
-                    Toast.makeText(getApplicationContext(), "Connection Succeeded", Toast.LENGTH_LONG).show();
+                    onSuccess.run();
+                    Toast.makeText(getApplicationContext(), getString(R.string.connection_succeeded), Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "Failed to connect! Check your internet.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
                 }
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "Failed to connect! Check your internet.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
     }
+
+    private void fetchUsers() {
+        apiService.getUsers().enqueue(new Callback<List<UserResponse>>() {
+            @Override
+            public void onResponse(Call<List<UserResponse>> call, Response<List<UserResponse>> response) {
+                if (response.isSuccessful()) {
+                    users = response.body();
+                    insertUsers();
+                } else {
+                    Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<UserResponse>> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void insertUsers() {
+        if (users != null && !users.isEmpty()) {
+            db.usersDao().deleteAll();
+            db.usersDao().resetPrimaryKey();
+            for (UserResponse userResponse : users) {
+                Users user = new Users();
+                user.setUsername(userResponse.getUserName());
+                user.setPassword(userResponse.getPassword());
+                db.usersDao().insert(user);
+            }
+        }
+    }
+
 
     private void loadServerConfig() {
         String ip = sharedPreferences.getString("ip", "");

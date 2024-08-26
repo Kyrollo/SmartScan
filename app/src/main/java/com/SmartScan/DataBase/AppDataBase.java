@@ -6,12 +6,17 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-import com.SmartScan.Dao.ItemDao;
-import com.SmartScan.Tables.Item;
+import com.SmartScan.Dao.*;
+import com.SmartScan.Tables.*;
 
-@Database(entities = {Item.class}, version = 6)
+@Database(entities = {Item.class, Users.class, Location.class, Category.class, Status.class, InventoryH.class}, version = 10)
 public abstract class AppDataBase extends RoomDatabase {
     public abstract ItemDao itemDao();
+    public abstract UsersDao usersDao();
+    public abstract LocationDao locationDao();
+    public abstract CategoryDao categoryDao();
+    public abstract StatusDao statusDao();
+    public abstract InventoryH_Dao inventoryH_dao();
 
     private static volatile AppDataBase INSTANCE;
 

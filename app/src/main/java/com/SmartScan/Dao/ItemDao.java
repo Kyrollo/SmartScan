@@ -1,12 +1,11 @@
 package com.SmartScan.Dao;
 
-import android.graphics.Bitmap;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
-import androidx.room.Update;
 
+import com.SmartScan.ApiClasses.ItemResponse;
 import com.SmartScan.Tables.Item;
 
 import java.util.List;
@@ -16,7 +15,7 @@ public interface ItemDao {
     @Insert
     void insert(Item item);
 
-    @Query("SELECT itemId, item_bar_code, item_desc, remark FROM item WHERE opt3 = :barcode")
+    @Query("SELECT item_bar_code, item_id, item_desc, item_sn, remark, category_id, category_id, location_id, status_id, image_data, id FROM item WHERE opt3 = :barcode")
     Item getItemsByOPT3(String barcode);
 
     @Query("UPDATE item SET status = 'Found' WHERE opt3 = :opt3")

@@ -5,19 +5,19 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
+import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
+import com.SmartScan.Tables.Users;
 
 public class MainActivity extends AppCompatActivity {
     private EditText usernameEditText, passwordEditText;
     private TextView linkTextView;
     private Button loginButton;
+    private AppDataBase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,9 +29,32 @@ public class MainActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.loginButton);
         linkTextView = findViewById(R.id.linkTextView);
 
+        db = AppDataBase.getDatabase(this);
+
         linkTextView.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ServerConfigActivity.class);
+            Intent intent = new Intent(this, ServerConfigActivity.class);
             startActivity(intent);
         });
+
+        loginButton.setOnClickListener(v -> doLogin());
+    }
+
+    private void doLogin() {
+        String username = usernameEditText.getText().toString();
+        String password = passwordEditText.getText().toString();
+
+        if (validateUser(username, password)) {
+            Toast.makeText(getApplicationContext(), getString(R.string.login_successfully), Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(MainActivity.this, HomeActivity.class);
+            intent.putExtra("USERNAME", " " + username);
+            startActivity(intent);
+        } else {
+            Toast.makeText(getApplicationContext(), getString(R.string.login_failed), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private boolean validateUser(String username, String password) {
+        Users user = db.usersDao().getUserByUsernameAndPassword(username, password);
+        return user != null;
     }
 }

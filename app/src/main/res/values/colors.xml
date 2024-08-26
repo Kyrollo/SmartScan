@@ -16,4 +16,5 @@
     <color name="g3">#145A7E</color>
     <color name="linkColor">#F3F7FD</color>
     <color name="pageName">#024568</color>
+    <color name="progressBarBackground">#6F000000</color>
 </resources>

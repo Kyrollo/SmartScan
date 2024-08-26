@@ -1,5 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Smart Scan</string>
+    <string name="ibex_solutions">IBEX Solutions</string>
+    <string name="session_name">Session Name:</string>
+    <string name="start_date">Start Date:</string>
     <string name="deleteAllDialog">Delete All Data</string>
     <string name="confirmDeleteDialog">Are you sure you want to delete all data?</string>
     <string name="yesDeleteDialog">Yes</string>
@@ -15,4 +19,26 @@
     <string name="save">Save</string>
     <string name="server_configuration">Server Configuration</string>
     <string name="test_connection_first">Please test the connection first</string>
+    <string name="connection_succeeded">Connection Succeeded</string>
+    <string name="failed_to_connect_check_your_internet">Failed to connect! Check your internet.</string>
+    <string name="login_successfully">Login Successfully</string>
+    <string name="login_failed">Invalid credentials. Please re-write your username and password.</string>
+    <string name="start">Start</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="welcome">Hello,  </string>
+    <string name="download_data">Download Data</string>
+    <string name="upload_data">Upload Data</string>
+    <string name="delete_all_data">Delete All Data</string>
+    <string name="bluetooth_connection">Bluetooth Connection</string>
+    <string name="logout">Logout</string>
+    <string name="data_downloaded_successfully">All data downloaded Successfully</string>
+    <string name="downloadDataDialog">Download Data</string>
+    <string name="confirmDownloadDialog">All existing data will be deleted. Do you want to continue?</string>
+    <string name="yesDownloadDialog">Yes</string>
+    <string name="noDownloadDialog">No</string>
+    <string name="progress_bar_start">0% Getting Started</string>
+    <string name="progress_bar_process">% Completed</string>
+    <string name="end_date">End Date:</string>
+    <string name="rfid_status">RFID Status:</string>
 </resources>

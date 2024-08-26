@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group>
+        <item
+            android:id="@+id/nav_download"
+            android:title="@string/download_data" />
+        <item
+            android:id="@+id/nav_upload"
+            android:title="@string/upload_data" />
+        <item
+            android:id="@+id/nav_delete"
+            android:title="@string/delete_all_data" />
+        <item
+            android:id="@+id/nav_bluetooth"
+            android:title="@string/bluetooth_connection" />
+        <item
+            android:id="@+id/nav_server_config"
+            android:title="@string/server_configuration" />
+    </group>
+
+    <item
+        android:id="@+id/nav_logout"
+        android:title="@string/logout"
+        android:layout_gravity="bottom" />
+</menu>

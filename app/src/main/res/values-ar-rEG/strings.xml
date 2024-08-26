@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Smart Scan</string>
+    <string name="ibex_solutions">IBEX Solutions</string>
+    <string name="session_name">اسم الجلسة:</string>
+    <string name="start_date">تاريخ البدء:</string>
+    <string name="deleteAllDialog">حذف جميع البيانات</string>
+    <string name="confirmDeleteDialog">هل أنت متأكد أنك تريد حذف جميع البيانات؟</string>
+    <string name="yesDeleteDialog">نعم</string>
+    <string name="noDeleteDialog">لا</string>
+    <string name="dataDeleted">تم حذف جميع البيانات بنجاح</string>
+    <string name="write_your_password">اكتب كلمة المرور الخاصة بك</string>
+    <string name="write_your_username">اكتب اسم المستخدم الخاص بك</string>
+    <string name="log_in">تسجيل الدخول</string>
+    <string name="configure_your_server"><u>تكوين الخادم</u></string>
+    <string name="ip_address">عنوان IP</string>
+    <string name="port">المنفذ</string>
+    <string name="test_connection">اختبار الاتصال</string>
+    <string name="save">حفظ</string>
+    <string name="server_configuration">تكوين الخادم</string>
+    <string name="test_connection_first">يرجى اختبار الاتصال أولاً</string>
+    <string name="connection_succeeded">تم الاتصال بنجاح</string>
+    <string name="failed_to_connect_check_your_internet">فشل الاتصال! تحقق من الإنترنت.</string>
+    <string name="login_successfully">تم تسجيل الدخول بنجاح</string>
+    <string name="login_failed">بيانات الاعتماد غير صحيحة. يرجى إعادة كتابة اسم المستخدم وكلمة المرور.</string>
+    <string name="start">ابدأ</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="welcome">أهلا،  </string>
+    <string name="download_data">تحميل البيانات</string>
+    <string name="upload_data">رفع البيانات</string>
+    <string name="delete_all_data">مسح جميع البيانات</string>
+    <string name="bluetooth_connection">الاتصال بالبلوتوث</string>
+    <string name="logout">تسجيل الخروج</string>
+    <string name="data_downloaded_successfully">تم تحميل جميع البيانات بنجاح</string>
+    <string name="downloadDataDialog">تحميل البيانات</string>
+    <string name="confirmDownloadDialog">سيتم حذف جميع البيانات الحالية. هل تريد المتابعة؟</string>
+    <string name="yesDownloadDialog">نعم</string>
+    <string name="noDownloadDialog">لا</string>
+</resources>

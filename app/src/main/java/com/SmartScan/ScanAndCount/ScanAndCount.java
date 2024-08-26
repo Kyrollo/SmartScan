@@ -36,10 +36,10 @@ import java.util.Set;
 
 public class ScanAndCount extends AppCompatActivity implements RFIDHandlerScan.ResponseHandlerInterface {
     private Set<String> uniqueTagIDs = new HashSet<>();
-    public TextView statusTextViewRFID = null;
+    public TextView textViewStatusrfid = null;
+    private Button btnExport;
     private TextView textrfid , scanResult, itemCount;
     private ImageView refreshConnection;
-    private Button btnExport;
     private RFIDHandlerScan rfidHandlerScan;
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
 
@@ -50,12 +50,13 @@ public class ScanAndCount extends AppCompatActivity implements RFIDHandlerScan.R
         setContentView(R.layout.activity_scan_and_count);
 
         // RFID Handler
-        statusTextViewRFID = (TextView) findViewById(R.id.textViewStatusrfid); //Device name
+        textViewStatusrfid = (TextView) findViewById(R.id.textViewStatusrfid);
         textrfid = (TextView) findViewById(R.id.edittextrfid);
         scanResult = (TextView) findViewById(R.id.scanResult);
         itemCount = (TextView) findViewById(R.id.itemCount);
         refreshConnection = (ImageView) findViewById(R.id.refreshConnection);
         btnExport = (Button) findViewById(R.id.btnExport);
+
         rfidHandlerScan = new RFIDHandlerScan();
 
         btnExport.setOnClickListener(v -> createExcelFiles());
@@ -185,7 +186,7 @@ public class ScanAndCount extends AppCompatActivity implements RFIDHandlerScan.R
     protected void onPostResume() {
         super.onPostResume();
         String result = rfidHandlerScan.onResume();
-        statusTextViewRFID.setText(result);
+        textViewStatusrfid.setText(result);
     }
 
     @Override
