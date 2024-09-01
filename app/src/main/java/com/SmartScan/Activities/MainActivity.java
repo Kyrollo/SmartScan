@@ -9,31 +9,40 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.SmartScan.App;
 import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Users;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private EditText usernameEditText, passwordEditText;
     private TextView linkTextView;
     private Button loginButton;
-    private AppDataBase db;
+    //private AppDataBase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initViews();
+
+
+    //    db = AppDataBase.getDatabase(this);
+
+
+    }
+
+    private void initViews() {
         usernameEditText = findViewById(R.id.usernameEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
         linkTextView = findViewById(R.id.linkTextView);
 
-        db = AppDataBase.getDatabase(this);
-
         linkTextView.setOnClickListener(v -> {
-            Intent intent = new Intent(this, ServerConfigActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, ServerConfigActivity.class));
         });
 
         loginButton.setOnClickListener(v -> doLogin());
@@ -44,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
         String password = passwordEditText.getText().toString();
 
         if (validateUser(username, password)) {
-            Toast.makeText(getApplicationContext(), getString(R.string.login_successfully), Toast.LENGTH_LONG).show();
+          //  Toast.makeText(getApplicationContext(), getString(R.string.login_successfully), Toast.LENGTH_LONG).show();
             Intent intent = new Intent(MainActivity.this, HomeActivity.class);
             intent.putExtra("USERNAME", " " + username);
             startActivity(intent);
@@ -54,7 +63,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean validateUser(String username, String password) {
-        Users user = db.usersDao().getUserByUsernameAndPassword(username, password);
+        List<Users> test = App.get().getDB().usersDao().getAllUsers();
+        Users user = App.get().getDB().usersDao().getUserByUsernameAndPassword(username, password);
         return user != null;
     }
 }

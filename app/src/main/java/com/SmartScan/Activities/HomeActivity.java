@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,8 +29,10 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.SmartScan.API.APIService;
+import com.SmartScan.API.Retrofit;
 import com.SmartScan.ApiClasses.*;
 
+import com.SmartScan.App;
 import com.SmartScan.Bluetooth.BluetoothConnectionActivity;
 import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
@@ -43,15 +46,15 @@ import java.util.Locale;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private Toolbar toolbar;
     private TextView sessionName, startDate, endDate;
-    private Button btnStart;
+    private Button btnStart, btnStartinventory;
     private DrawerLayout drawerLayout;
-    private AppDataBase db;;
+    LinearLayout invSession;
+  //  private AppDataBase db;;
     private APIService apiService;
     private List<ItemResponse> items;
     private List<CategoryResponse> categories;
@@ -74,6 +77,30 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        initViews();
+        setupNavigationDrawer();
+        setupLanguageSwitching();
+
+//        sharedPreferences = getSharedPreferences("ServerConfig", Context.MODE_PRIVATE);
+//
+//        ip = sharedPreferences.getString("ip", "");
+//        port = sharedPreferences.getInt("port", -1);
+//
+//        Retrofit retrofit = new Retrofit.Builder()
+//                .baseUrl("http://" + ip + ":" + port + "/")
+//                .addConverterFactory(GsonConverterFactory.create())
+//                .build();
+//
+//        apiService = retrofit.create(APIService.class);
+//
+//        db = AppDataBase.getDatabase(this);
+
+        updateSessionData();
+
+
+    }
+
+    private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("");
@@ -85,42 +112,32 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         tvStatus = findViewById(R.id.tvStatus);
         progressBarLayout = findViewById(R.id.progressBarLayout);
 
-        setupNavigationDrawer();
-        setupLanguageSwitching();
 
-        sharedPreferences = getSharedPreferences("ServerConfig", Context.MODE_PRIVATE);
-
-        ip = sharedPreferences.getString("ip", "");
-        port = sharedPreferences.getInt("port", -1);
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://" + ip + ":" + port + "/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        apiService = retrofit.create(APIService.class);
-
-        db = AppDataBase.getDatabase(this);
-
-        updateSessionData();
+        apiService = Retrofit.getRetrofit().create(APIService.class);
 
         btnStart.setOnClickListener(v -> {
-            Intent intent = new Intent(this, ScanAndCount.class);
+
+            Intent intent = new Intent(this, InventoryLocation.class);
             startActivity(intent);
+        });
+
+        btnStartinventory.setOnClickListener(v -> {
+
+
         });
     }
 
     private void updateSessionData() {
-        List<InventoryH> inventoryHS = db.inventoryH_dao().getAllInventoryHs();
+        List<InventoryH> inventoryHS = App.get().getDB().inventoryH_dao().getAllInventoryHs();
         if (inventoryHS.size() > 0) {
             InventoryH inventoryH = inventoryHS.get(0);
             sessionName.setText(inventoryH.getInventoryName());
-            startDate.setText(inventoryH.getStartDate());
+            startDate.setText(inventoryH.getStartDate().replace("T00:00:00",""));
             if (inventoryH.isClosed()) {
                 btnStart.setVisibility(View.GONE);
                 if (inventoryH.getEndDate() != null){
                     endDate.setVisibility(View.VISIBLE);
-                    endDate.setText(inventoryH.getEndDate());
+                    endDate.setText(inventoryH.getEndDate().replace("T00:00:00",""));
                 }
             } else {
                 btnStart.setVisibility(View.VISIBLE);
@@ -195,8 +212,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     items = response.body();
                     if (items != null) {
-                        db.itemDao().deleteAll();
-                        db.itemDao().resetPrimaryKey();
+                        App.get().getDB().itemDao().deleteAll();
+                        App.get().getDB().itemDao().resetPrimaryKey();
                         insertItems(items);
                     }
                 } else {
@@ -215,7 +232,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         for (ItemResponse item : items) {
             Item newItem = new Item(item.getItemBarCode(), item.getItemDesc(), item.getRemark(), item.getOPT3(), item.getStatus(),
                     item.getItemID(), item.getCategoryID(), item.getLocationID(), item.getStatusID(), item.getItemSN());
-            db.itemDao().insert(newItem);
+            App.get().getDB().itemDao().insert(newItem);
         }
         updateProgress();
     }
@@ -227,8 +244,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     categories = response.body();
                     if (categories != null) {
-                        db.locationDao().deleteAll();
-                        db.locationDao().resetPrimaryKey();
+                        App.get().getDB().locationDao().deleteAll();
+                        App.get().getDB().locationDao().resetPrimaryKey();
                         insertCategories(categories);
                     }
                 } else {
@@ -246,7 +263,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void insertCategories(List<CategoryResponse> categories) {
         for (CategoryResponse category : categories) {
             Category newCategory = new Category(category.getCategoryID(), category.getCategoryDesc());
-            db.categoryDao().insert(newCategory);
+            App.get().getDB().categoryDao().insert(newCategory);
         }
         updateProgress();
     }
@@ -258,8 +275,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     locations = response.body();
                     if (locations != null) {
-                        db.locationDao().deleteAll();
-                        db.locationDao().resetPrimaryKey();
+                        App.get().getDB().locationDao().deleteAll();
+                        App.get().getDB().locationDao().resetPrimaryKey();
                         insertLocations(locations);
                     }
                 } else {
@@ -278,7 +295,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         for (LocationResponse location : locations) {
             Location newLocation = new Location(location.getLocationID(), location.getLocationBarCode(), location.getLocationDesc(),
                     location.isHasParent(), location.getLocationParentID(), location.getFullLocationDesc());
-            db.locationDao().insert(newLocation);
+            App.get().getDB().locationDao().insert(newLocation);
         }
         updateProgress();
     }
@@ -290,8 +307,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     allStatus = response.body();
                     if (allStatus != null) {
-                        db.locationDao().deleteAll();
-                        db.locationDao().resetPrimaryKey();
+                        App.get().getDB().locationDao().deleteAll();
+                        App.get().getDB().locationDao().resetPrimaryKey();
                         insertStatus(allStatus);
                     }
                 } else {
@@ -309,7 +326,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void insertStatus(List<StatusResponse> allStatus) {
         for (StatusResponse status : allStatus) {
             Status newStatus = new Status(status.getStatusID(), status.getStatusDesc());
-            db.statusDao().insert(newStatus);
+            App.get().getDB().statusDao().insert(newStatus);
         }
         updateProgress();
     }
@@ -321,8 +338,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     inventoriesH = response.body();
                     if (inventoriesH != null) {
-                        db.locationDao().deleteAll();
-                        db.locationDao().resetPrimaryKey();
+                        App.get().getDB().locationDao().deleteAll();
+                        App.get().getDB().locationDao().resetPrimaryKey();
                         insertInventoryH(inventoriesH);
                     }
                 } else {
@@ -341,7 +358,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         for (InventoryH_Response inventory : inventoriesH) {
             InventoryH newInventory = new InventoryH(inventory.getInventoryID(), inventory.getInventoryName(),
                     inventory.getStartdate(), inventory.getEnddate(), inventory.isClosed());
-            db.inventoryH_dao().insert(newInventory);
+            App.get().getDB().inventoryH_dao().insert(newInventory);
         }
         updateProgress();
         updateSessionData();
@@ -403,16 +420,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void deleteAllData() {
-        db.itemDao().deleteAll();
-        db.categoryDao().deleteAll();
-        db.locationDao().deleteAll();
-        db.statusDao().deleteAll();
-        db.inventoryH_dao().deleteAll();
-        db.itemDao().resetPrimaryKey();
-        db.categoryDao().resetPrimaryKey();
-        db.locationDao().resetPrimaryKey();
-        db.statusDao().resetPrimaryKey();
-        db.inventoryH_dao().resetPrimaryKey();
+        App.get().getDB().itemDao().deleteAll();
+        App.get().getDB().categoryDao().deleteAll();
+        App.get().getDB().locationDao().deleteAll();
+        App.get().getDB().statusDao().deleteAll();
+        App.get().getDB().inventoryH_dao().deleteAll();
+        App.get().getDB().itemDao().resetPrimaryKey();
+        App.get().getDB().categoryDao().resetPrimaryKey();
+        App.get().getDB().locationDao().resetPrimaryKey();
+        App.get().getDB().statusDao().resetPrimaryKey();
+        App.get().getDB().inventoryH_dao().resetPrimaryKey();
         Toast.makeText(HomeActivity.this, getString(R.string.dataDeleted), Toast.LENGTH_SHORT).show();
         updateSessionData();
     }

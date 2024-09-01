@@ -1,6 +1,7 @@
 package com.SmartScan.API;
 
 import com.SmartScan.ApiClasses.*;
+import com.SmartScan.Tables.Users;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public interface APIService {
     Call<List<ItemResponse>> getItems();
 
     @GET("api/Connection/GetAllUsers")
-    Call<List<UserResponse>> getUsers();
+    Call<List<Users>> getUsers();
 
     @GET("api/DownloadData/GetCategories")
     Call<List<CategoryResponse>> getCategories();

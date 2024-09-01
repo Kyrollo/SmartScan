@@ -3,8 +3,9 @@
     <item>
         <shape>
             <gradient
-                android:startColor="@color/g1"
-                android:endColor="@color/g2"
+                android:startColor="@color/linkColor"
+                android:centerColor="@color/edittextStroke"
+                android:endColor="@color/pageName"
                 android:angle="240"/>
         </shape>
     </item>

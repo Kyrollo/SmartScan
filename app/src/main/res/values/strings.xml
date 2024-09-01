@@ -9,9 +9,9 @@
     <string name="yesDeleteDialog">Yes</string>
     <string name="noDeleteDialog">No</string>
     <string name="dataDeleted">All data deleted successfully</string>
-    <string name="write_your_password">Write your password</string>
-    <string name="write_your_username">Write your username</string>
-    <string name="log_in">Log In</string>
+    <string name="write_your_password">Password</string>
+    <string name="write_your_username">Username</string>
+    <string name="log_in">LOGIN</string>
     <string name="configure_your_server"><u>Server Configuration</u></string>
     <string name="ip_address">IP Address</string>
     <string name="port">Port</string>
@@ -23,7 +23,7 @@
     <string name="failed_to_connect_check_your_internet">Failed to connect! Check your internet.</string>
     <string name="login_successfully">Login Successfully</string>
     <string name="login_failed">Invalid credentials. Please re-write your username and password.</string>
-    <string name="start">Start</string>
+    <string name="start">Start Inventory</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="welcome">Hello,  </string>
@@ -41,4 +41,10 @@
     <string name="progress_bar_process">% Completed</string>
     <string name="end_date">End Date:</string>
     <string name="rfid_status">RFID Status:</string>
+    <string name="invalid_url_host">Invalid URL Host</string>
+    <string name="inventory_info">Inventory Info</string>
+    <string name="choose_location">Choose Location</string>
+    <string name="inventory_location">Inventory Location</string>
+    <string name="choose_valid_location">Please Choose a Valid Location\n</string>
+    <string name="choose_a_location">Please Choose a location</string>
 </resources>

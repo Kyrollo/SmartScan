@@ -13,10 +13,13 @@ public interface UsersDao {
     @Insert
     void insert(Users user);
 
+    @Insert
+    void insertAll(List<Users> users);
+
     @Query("SELECT * FROM users")
     List<Users> getAllUsers();
 
-    @Query("SELECT * FROM users WHERE username = :username AND password = :password LIMIT 1")
+    @Query("SELECT * FROM users WHERE UserName = :username AND Password = :password LIMIT 1")
     Users getUserByUsernameAndPassword(String username, String password);
 
     @Query("DELETE FROM item")
