@@ -54,13 +54,13 @@ public class Item {
     public Item() {
     }
 
-    public Item(String itemBarCode, String itemDesc, String remark, String opt3, String status, int itemID, String
-            categoryID, String locationID, int statusID, String itemSN) {
+    public Item(String itemBarCode, String itemDesc, String remark, String opt3, int itemID,
+                String categoryID, String locationID, int statusID, String itemSN) {
         this.itemBarCode = itemBarCode;
         this.itemDesc = itemDesc;
         this.remark = remark;
         this.opt3 = opt3;
-        this.status = status;
+        this.status = "Missing";
         ItemID = itemID;
         CategoryID = categoryID;
         LocationID = locationID;

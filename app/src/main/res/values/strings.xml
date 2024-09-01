@@ -47,4 +47,7 @@
     <string name="inventory_location">Inventory Location</string>
     <string name="choose_valid_location">Please Choose a Valid Location\n</string>
     <string name="choose_a_location">Please Choose a location</string>
+    <string name="start_inventory">Start Inventory</string>
+    <string name="location">Location</string>
+
 </resources>

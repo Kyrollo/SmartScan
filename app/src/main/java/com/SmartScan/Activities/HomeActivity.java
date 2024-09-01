@@ -51,7 +51,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private Toolbar toolbar;
     private TextView sessionName, startDate, endDate;
-    private Button btnStart, btnStartinventory;
+    private Button btnStart;
     private DrawerLayout drawerLayout;
     LinearLayout invSession;
   //  private AppDataBase db;;
@@ -81,22 +81,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         setupNavigationDrawer();
         setupLanguageSwitching();
 
-//        sharedPreferences = getSharedPreferences("ServerConfig", Context.MODE_PRIVATE);
-//
-//        ip = sharedPreferences.getString("ip", "");
-//        port = sharedPreferences.getInt("port", -1);
-//
-//        Retrofit retrofit = new Retrofit.Builder()
-//                .baseUrl("http://" + ip + ":" + port + "/")
-//                .addConverterFactory(GsonConverterFactory.create())
-//                .build();
-//
-//        apiService = retrofit.create(APIService.class);
-//
-//        db = AppDataBase.getDatabase(this);
-
         updateSessionData();
-
 
     }
 
@@ -117,13 +102,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         btnStart.setOnClickListener(v -> {
 
-            Intent intent = new Intent(this, InventoryLocation.class);
+            Intent intent = new Intent(this, LocationActivity.class);
             startActivity(intent);
-        });
-
-        btnStartinventory.setOnClickListener(v -> {
-
-
         });
     }
 
@@ -230,7 +210,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     private void insertItems(List<ItemResponse> items) {
         for (ItemResponse item : items) {
-            Item newItem = new Item(item.getItemBarCode(), item.getItemDesc(), item.getRemark(), item.getOPT3(), item.getStatus(),
+            Item newItem = new Item(item.getItemBarCode(), item.getItemDesc(), item.getRemark(), item.getOPT3(),
                     item.getItemID(), item.getCategoryID(), item.getLocationID(), item.getStatusID(), item.getItemSN());
             App.get().getDB().itemDao().insert(newItem);
         }

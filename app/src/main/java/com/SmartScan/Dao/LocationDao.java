@@ -17,6 +17,12 @@ public interface LocationDao {
     @Query("SELECT * FROM location")
     List<Location> getAllLocations();
 
+    @Query("SELECT * FROM location where has_parent = false")
+    List<Location> getAllParents();
+
+    @Query("SELECT * FROM location where location_parent_id = :parentId")
+    List<Location> getAllLocationByParentID(String parentId);
+
     @Query("DELETE FROM location")
     void deleteAll();
 

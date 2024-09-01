@@ -37,10 +37,14 @@
     <string name="confirmDownloadDialog">سيتم حذف جميع البيانات الحالية. هل تريد المتابعة؟</string>
     <string name="yesDownloadDialog">نعم</string>
     <string name="noDownloadDialog">لا</string>
-    <string name="invalid_url_host">Invalid URL Host</string>
-    <string name="inventory_info">Inventory Info</string>
-    <string name="choose_location">Choose Location</string>
-    <string name="inventory_location">Inventory Location</string>
-    <string name="choose_valid_location">Please Choose Location\n</string>
-    <string name="choose_a_location">Please Choose a location</string>
+    <string name="progress_bar_start">0% البدء</string>
+    <string name="progress_bar_process">% تم إكمال</string>
+    <string name="end_date">تاريخ الانتهاء:</string>
+    <string name="rfid_status">حالة الماسح:</string>
+    <string name="invalid_url_host">مضيف URL غير صالح</string>
+    <string name="inventory_info">معلومات المخزون</string>
+    <string name="choose_location">اختر الموقع</string>
+    <string name="inventory_location">موقع المخزون</string>
+    <string name="choose_valid_location">يرجى اختيار موقع صالح\n</string>
+    <string name="choose_a_location">يرجى اختيار موقع</string>
 </resources>

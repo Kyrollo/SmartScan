@@ -52,6 +52,32 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         context = activity;
         textView = activity.textViewStatusRFID;
         scannerList = new ArrayList<>();
+        if (reader != null && reader.isConnected()) {
+            context.updateRFIDStatus("Connected: " + reader.getHostName());
+        } else {
+            context.updateRFIDStatus("Not connected");
+            InitSDK();
+        }
+    }
+
+    public String getDeviceName() {
+        return reader.getHostName();
+    }
+
+    public void checkAndInitRFIDHandler() {
+        if (reader.isConnected()) {
+//            context.updateRFIDStatus("Reader already connected");
+            context.updateRFIDStatus("Connected: " + reader.getHostName());
+        } else {
+            InitSDK();
+        }
+    }
+
+    public boolean isConnected() {
+        return reader != null && reader.isConnected();
+    }
+
+    public void isNotConnected() {
         InitSDK();
     }
 

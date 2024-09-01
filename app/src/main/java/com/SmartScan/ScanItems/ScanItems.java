@@ -27,8 +27,10 @@ import com.SmartScan.API.APIService;
 import com.SmartScan.Adapters.ItemAdapter;
 import com.SmartScan.Adapters.UnregisteredTagsAdapter;
 import com.SmartScan.ApiClasses.ItemResponse;
+import com.SmartScan.App;
 import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
+import com.SmartScan.Tables.Inventory;
 import com.SmartScan.Tables.Item;
 import com.zebra.rfid.api3.TagData;
 
@@ -45,9 +47,6 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFIDHandlerListener {
-    private AppDataBase db;
-    private APIService apiService;
-    private Button btnDownload, btnDeleteAll;
     private RecyclerView recyclerView;
     private ItemAdapter itemAdapter;
     private RecyclerView unregisteredTagsRecyclerView;
@@ -62,6 +61,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
+    private String locationID;
 
 
     @SuppressLint("MissingInflatedId")
@@ -70,17 +70,11 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan_items);
 
-        btnDownload = findViewById(R.id.btnDownload);
-        btnDeleteAll = findViewById(R.id.btnDeleteAll);
         recyclerView = findViewById(R.id.recyclerViewItems);
         rfidHandler = new RFIDHandlerItems();
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://192.168.1.77:8080/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        apiService = retrofit.create(APIService.class);
+        Intent intent = getIntent();
+        locationID = intent.getStringExtra("locationId");
 
         initializePage();
 
@@ -112,9 +106,8 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     }
 
     private void initializePage() {
-        db = AppDataBase.getDatabase(this);
 
-        itemList = db.itemDao().getAllItems();
+        itemList = App.get().getDB().itemDao().getAllItemsByParentID(locationID);
 
         radioGroupTags = findViewById(R.id.radioGroupTags);
 
@@ -134,91 +127,13 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         registeredCountData = findViewById(R.id.registeredCountData);
         unregisteredCountData = findViewById(R.id.unregisteredCountData);
 
-        btnDeleteAll.setOnClickListener(view -> showDeleteDialog());
-        btnDownload.setOnClickListener(view -> testConnection(this::fetchItems));
-
         recyclerView.setVisibility(View.VISIBLE);
         unregisteredTagsRecyclerView.setVisibility(View.GONE);
         updateCountTextViews();
     }
 
-    private void showDeleteDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.deleteAllDialog))
-                .setMessage(getString(R.string.confirmDeleteDialog))
-                .setPositiveButton(getString(R.string.yesDeleteDialog), (dialog, which) -> {
-                    deleteAllData();
-                })
-                .setNegativeButton(getString(R.string.noDeleteDialog), (dialog, which) -> {
-                    dialog.dismiss();
-                })
-                .create()
-                .show();
-    }
-
-    private void deleteAllData() {
-        db.itemDao().deleteAll();
-        db.itemDao().resetPrimaryKey();
-        updateRecyclerView();
-        unregisteredTags.clear();
-        updateUnregisteredTagsRecyclerView();
-        Toast.makeText(this, "All Data Deleted", Toast.LENGTH_SHORT).show();
-    }
-
-    private void testConnection(Runnable onSuccess) {
-        apiService.testConnection().enqueue(new Callback<String>() {
-            @Override
-            public void onResponse(Call<String> call, Response<String> response) {
-                if (response.isSuccessful() && "Success".equals(response.body())) {
-                    onSuccess.run();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Failed to connect! Check your internet.", Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<String> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "Failed to connect! Check your internet.", Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void fetchItems() {
-        apiService.getItems().enqueue(new Callback<List<ItemResponse>>() {
-            @Override
-            public void onResponse(Call<List<ItemResponse>> call, Response<List<ItemResponse>> response) {
-                List<ItemResponse> items = response.body();
-                if (response.isSuccessful()) {
-                    insertItems(items);
-                } else {
-                    Toast.makeText(getApplicationContext(), "Failed to get items", Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<ItemResponse>> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "Failed to get items", Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
-    private void insertItems(List<ItemResponse> items) {
-        for (ItemResponse itemResponse : items) {
-            if (itemResponse.getOPT3() != null) {
-                Item item = new Item();
-                item.setItemBarCode(itemResponse.getItemBarCode());
-                item.setItemDesc(itemResponse.getItemDesc());
-                item.setRemark(itemResponse.getRemark());
-                item.setOpt3(itemResponse.getOPT3());
-                item.setStatus("Missing");
-                db.itemDao().insert(item);
-            }
-        }
-        updateRecyclerView();
-    }
-
     private void updateRecyclerView() {
-        itemList = db.itemDao().getAllItems();
+        itemList = App.get().getDB().itemDao().getAllItemsByParentID(locationID);
         itemAdapter.updateData(itemList);
         updateCountTextViews();
     }
@@ -242,13 +157,24 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     }
 
     private void changeItemStatus(String tagId) {
-        Item item = db.itemDao().getItemsByOPT3(tagId);
+        Item item = App.get().getDB().itemDao().getItemsByOPT3(tagId);
 
         if (item == null) {
             unregisteredTags.add(tagId);
             updateUnregisteredTagsRecyclerView();
         } else if (item != null && item.getStatus() != "Found") {
-            db.itemDao().updateItemStatusToFound(tagId);
+            App.get().getDB().itemDao().updateItemStatusToFound(tagId);
+        }
+    }
+
+    private void changeItemInventoryStatus(String tagId) {
+        Inventory inventory = App.get().getDB().inventoryDao().getInventoryByOPT3(tagId);
+
+        if (inventory == null) {
+            unregisteredTags.add(tagId);
+            updateUnregisteredTagsRecyclerView();
+        } else if (inventory != null && inventory.getStatus() != "Found") {
+            App.get().getDB().inventoryDao().updateItemStatusToFound(inventory.getItemID());
         }
     }
 
@@ -290,7 +216,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
                     Bitmap bitmap = data.getParcelableExtra("data");
                     if (bitmap != null) {
                         byte[] imageData = bitmapToByteArray(bitmap);
-                        db.itemDao().updateItemImage(imageData, randomItem.getItemBarCode());
+                        App.get().getDB().itemDao().updateItemImage(imageData, randomItem.getItemBarCode());
                         finish();
                     }
                 } else {
@@ -348,11 +274,11 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         rfidHandler.onResume();
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        rfidHandler.onDestroy();
-    }
+//    @Override
+//    protected void onDestroy() {
+//        super.onDestroy();
+//        rfidHandler.onDestroy();
+//    }
 
     @Override
     public void handleTagdata(TagData[][] tagDataArray) {
@@ -363,7 +289,8 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
                 tagId = tagData[index].getTagID();
 
                 if (uniqueTagIDs.add(tagId)) {
-                    changeItemStatus(tagId);
+//                    changeItemStatus(tagId);
+                    changeItemInventoryStatus(tagId);
                 }
             }
         }

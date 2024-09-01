@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey;
 
 @Entity(tableName = "inventoryh")
 public class InventoryH {
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey(autoGenerate = false)
     private int id;
 
     @ColumnInfo(name = "inventory_id")

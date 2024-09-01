@@ -27,6 +27,9 @@ public interface ItemDao {
     @Query("SELECT * FROM item")
     List<Item> getAllItems();
 
+    @Query("SELECT * FROM item WHERE opt3 is not null AND location_id = :locationID")
+    List<Item> getAllItemsByParentID(String locationID);
+
     @Query("DELETE FROM item")
     void deleteAll();
 
