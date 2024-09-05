@@ -11,7 +11,6 @@ import android.provider.MediaStore;
 
 import android.view.View;
 import android.widget.Button;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,46 +22,42 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.SmartScan.API.APIService;
 import com.SmartScan.Adapters.ItemAdapter;
-import com.SmartScan.Adapters.UnregisteredTagsAdapter;
-import com.SmartScan.ApiClasses.ItemResponse;
 import com.SmartScan.App;
-import com.SmartScan.DataBase.AppDataBase;
+
 import com.SmartScan.R;
+import com.SmartScan.Tables.Category;
 import com.SmartScan.Tables.Inventory;
 import com.SmartScan.Tables.Item;
+import com.SmartScan.Tables.Location;
+import com.google.android.material.tabs.TabLayout;
 import com.zebra.rfid.api3.TagData;
 
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-
 public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFIDHandlerListener {
     private RecyclerView recyclerView;
     private ItemAdapter itemAdapter;
-    private RecyclerView unregisteredTagsRecyclerView;
-    private UnregisteredTagsAdapter unregisteredTagsAdapter;
-    private List<Item> itemList;
+    private List<Inventory> inventoryList, registredInventoryList, missingInventoryList, allTagsList, unregistredInventoryList, AllInventoryList;
+    private List<Item> registeredItemsList, unregisteredItemsList, missingItemsList, allItemsList;
     private Set<String> uniqueTagIDs = new HashSet<>();
     private Set<String> unregisteredTags = new HashSet<>();
     private RFIDHandlerItems rfidHandler;
-    private RadioGroup radioGroupTags;
-    private Item randomItem;
-    TextView uniqueCountData, registeredCountData, unregisteredCountData;
+    private Inventory randomInventory;
+    TextView allCountData, registeredCountData, unregisteredCountData, missingCountData;
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
-    private String locationID;
-
+    private String locationID, startDateStr;
+    private int userId, inventoryId;
+    private TabLayout tabLayout;
+    private Button btnEnd;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -73,20 +68,45 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         recyclerView = findViewById(R.id.recyclerViewItems);
         rfidHandler = new RFIDHandlerItems();
 
-        Intent intent = getIntent();
-        locationID = intent.getStringExtra("locationId");
+        retrieveData();
 
         initializePage();
 
-        radioGroupTags.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.radioRegisteredTags) {
-                updateRecyclerView();
-                recyclerView.setVisibility(View.VISIBLE);
-                unregisteredTagsRecyclerView.setVisibility(View.GONE);
-            } else if (checkedId == R.id.radioUnregisteredTags) {
-                updateUnregisteredTagsRecyclerView();
-                recyclerView.setVisibility(View.GONE);
-                unregisteredTagsRecyclerView.setVisibility(View.VISIBLE);
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                switch (tab.getPosition()) {
+                    case 0:
+                        allTagsList = new ArrayList<>();
+                        if (allTagsList != null) {
+                            allTagsList.clear();
+                            allTagsList.addAll(registredInventoryList);
+                            allTagsList.addAll(unregistredInventoryList);
+                        }
+                        allTagsList.addAll(registredInventoryList);
+                        allTagsList.addAll(unregistredInventoryList);
+                        updateRecyclerView(allTagsList, allItemsList);
+                        break;
+                    case 1:
+                        updateRecyclerView(registredInventoryList, registeredItemsList);
+                        break;
+                    case 2:
+                        updateRecyclerView(missingInventoryList, missingItemsList);
+                        break;
+                    case 3:
+                        updateRecyclerView(unregistredInventoryList, unregisteredItemsList);
+                        break;
+                }
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                // Do nothing
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                // Do nothing
             }
         });
 
@@ -103,102 +123,205 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
             rfidHandler.onCreate(this);
         }
 
+        btnEnd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showValidationDialog();
+            }
+        });
+
+    }
+
+    private void retrieveData() {
+        Intent intent = getIntent();
+        userId = intent.getIntExtra("USERID", -1);
+        inventoryId = intent.getIntExtra("INVENTORYID", -1);
+        startDateStr = intent.getStringExtra("INVENTORYDATE");
+        locationID = intent.getStringExtra("locationId");
     }
 
     private void initializePage() {
+        inventoryList = App.get().getDB().inventoryDao().getAllInventoriesByLocationId(locationID);
+        registredInventoryList = App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, false);
+        missingInventoryList = App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true);
+        AllInventoryList = App.get().getDB().inventoryDao().getAllInventories();
+        unregistredInventoryList = new ArrayList<>();
 
-        itemList = App.get().getDB().itemDao().getAllItemsByParentID(locationID);
+        if (inventoryList == null) {
+            inventoryList = new ArrayList<>();
+        }
+        if (registredInventoryList == null) {
+            registredInventoryList = new ArrayList<>();
+        }
+        if (missingInventoryList == null) {
+            missingInventoryList = new ArrayList<>();
+        }
 
-        radioGroupTags = findViewById(R.id.radioGroupTags);
+        if (inventoryList.size() == 0) {
+            List<Item> itemList = App.get().getDB().itemDao().getAllItemsByParentID(locationID);
+            for (Item item : itemList) {
+                Category categoryDesc = App.get().getDB().categoryDao().getCategoryByID(item.getCategoryID());
+                Location loc = App.get().getDB().locationDao().getAllLocationByLocationID(item.getLocationID());
+                Inventory inventory = new Inventory(inventoryId, startDateStr, userId, item.getItemID(), item.getOpt3(),
+                        item.getRemark(), item.getCategoryID(), categoryDesc.getCategoryDesc(), item.getStatusID(), locationID,
+                        loc.getLocationDesc(), loc.getFullLocationDesc());
+                App.get().getDB().inventoryDao().insert(inventory);
+            }
+            inventoryList = App.get().getDB().inventoryDao().getAllInventoriesByLocationId(locationID);
+            registredInventoryList = App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, false);
+            missingInventoryList = App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true);
+        }
+
+        allItemsList = new ArrayList<>();
+//        for (Inventory inventory : inventoryList) {
+//            Item item = App.get().getDB().itemDao().getItemsByItemID(inventory.getItemID());
+//            if (item != null) {
+//                allItemsList.add(item);
+//            }
+//        }
 
         recyclerView = findViewById(R.id.recyclerViewItems);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        itemAdapter = new ItemAdapter(itemList);
+        itemAdapter = new ItemAdapter(allItemsList);
         recyclerView.setAdapter(itemAdapter);
 
-        unregisteredTagsRecyclerView = findViewById(R.id.recyclerViewUnregisteredTags);
-        unregisteredTagsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        tabLayout = findViewById(R.id.tabLayout);
 
-        unregisteredTagsAdapter = new UnregisteredTagsAdapter(unregisteredTags);
-        unregisteredTagsRecyclerView.setAdapter(unregisteredTagsAdapter);
-
-        uniqueCountData = findViewById(R.id.uniqueCountData);
+        allCountData = findViewById(R.id.allCountData);
         registeredCountData = findViewById(R.id.registeredCountData);
+        missingCountData = findViewById(R.id.missingCountData);
         unregisteredCountData = findViewById(R.id.unregisteredCountData);
+        btnEnd = findViewById(R.id.btnEnd);
 
         recyclerView.setVisibility(View.VISIBLE);
-        unregisteredTagsRecyclerView.setVisibility(View.GONE);
+
+        // Open the missing tab by default
+        openTab(2);
+
         updateCountTextViews();
     }
 
-    private void updateRecyclerView() {
-        itemList = App.get().getDB().itemDao().getAllItemsByParentID(locationID);
+    private void openTab(int tabPosition) {
+        TabLayout.Tab tab = tabLayout.getTabAt(tabPosition);
+        if (tab != null) {
+            tab.select();
+        }
+    }
+
+    private void updateRecyclerView(List<Inventory> invlist, List<Item> itemList) {
+        if (invlist == null) {
+            invlist = new ArrayList<>();
+        }
+        if (itemList == null) {
+            itemList = new ArrayList<>();
+        }
+
+        List<Inventory> invlistCopy = new ArrayList<>(invlist);
+
+        for (Inventory inventory : invlistCopy) {
+            if (inventory != null) {
+                Item item = App.get().getDB().itemDao().getItemsByItemID(inventory.getItemID());
+                if (item != null) {
+                    itemList.add(item);
+                }
+            }
+        }
+
         itemAdapter.updateData(itemList);
         updateCountTextViews();
     }
 
-    private void updateUnregisteredTagsRecyclerView() {
-        runOnUiThread(() -> {
-            unregisteredTagsAdapter = new UnregisteredTagsAdapter(unregisteredTags);
-            unregisteredTagsRecyclerView.setAdapter(unregisteredTagsAdapter);
-            updateCountTextViews();
-        });
-    }
-
     private void updateCountTextViews() {
-        int registeredCount = itemList.size();
-        int unregisteredCount = unregisteredTags.size();
-        int uniqueCount = registeredCount + unregisteredCount;
+        int registeredCount = registredInventoryList.size();
+        int missingCount = missingInventoryList.size();
+        int unregisteredCount = unregistredInventoryList.size();
+        int allTagsCount = registeredCount + unregisteredCount;
 
-        uniqueCountData.setText(String.valueOf(uniqueCount));
+        allCountData.setText(String.valueOf(allTagsCount));
         registeredCountData.setText(String.valueOf(registeredCount));
+        missingCountData.setText(String.valueOf(missingCount));
         unregisteredCountData.setText(String.valueOf(unregisteredCount));
     }
 
-    private void changeItemStatus(String tagId) {
-        Item item = App.get().getDB().itemDao().getItemsByOPT3(tagId);
+    private void changeItemInventoryStatus(String tagId) {
+        if (!isItemInInventory(tagId)) {
+            addUnregisteredItem(tagId);
+            // Open the unregistered tab
+            runOnUiThread(() -> openTab(3));
+            return;
+        }
 
-        if (item == null) {
-            unregisteredTags.add(tagId);
-            updateUnregisteredTagsRecyclerView();
-        } else if (item != null && item.getStatus() != "Found") {
-            App.get().getDB().itemDao().updateItemStatusToFound(tagId);
+        Inventory inventory = App.get().getDB().inventoryDao().getInventoryByOPT3(tagId);
+            if (inventory != null && inventory.isMissing()) {
+            App.get().getDB().inventoryDao().updateItemStatusToFound(inventory.getItemID());
+
+            missingInventoryList = App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true);
+            registredInventoryList.add(inventory);
+        }
+        // Open the registered tab
+        runOnUiThread(() -> openTab(1));
+    }
+
+    private boolean isItemInInventory(String tagId) {
+        return App.get().getDB().inventoryDao().getInventoryByOPT3AndLocationID(tagId, locationID) != null;
+    }
+
+    private void addUnregisteredItem(String tagId) {
+        unregisteredTags.add(tagId);
+        Inventory unregisteredInventory = App.get().getDB().inventoryDao().getInventoryByOPT3(tagId);
+        if (unregisteredInventory == null) {
+            getItemAndAddToInventory(tagId);
+            Inventory newInsertedInventory = App.get().getDB().inventoryDao().getInventoryByOPT3(tagId);
+
+            if (newInsertedInventory != null){
+                unregistredInventoryList.add(newInsertedInventory);
+            } else {
+                runOnUiThread(() -> Toast.makeText(this, getString(R.string.invalid_rfid), Toast.LENGTH_SHORT).show());
+//                Toast.makeText(this, getString(R.string.invalid_rfid), Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            unregistredInventoryList.add(unregisteredInventory);
         }
     }
 
-    private void changeItemInventoryStatus(String tagId) {
-        Inventory inventory = App.get().getDB().inventoryDao().getInventoryByOPT3(tagId);
+    private void getItemAndAddToInventory(String tagId) {
+        Item item = App.get().getDB().itemDao().getItemsByOPT3(tagId);
+        if (item != null) {
+            Category categoryDesc = App.get().getDB().categoryDao().getCategoryByID(item.getCategoryID());
+            Location NewLoc = App.get().getDB().locationDao().getAllLocationByLocationID(locationID);
+            Location OldLoc = App.get().getDB().locationDao().getAllLocationByLocationID(item.getLocationID());
 
-        if (inventory == null) {
-            unregisteredTags.add(tagId);
-            updateUnregisteredTagsRecyclerView();
-        } else if (inventory != null && inventory.getStatus() != "Found") {
-            App.get().getDB().inventoryDao().updateItemStatusToFound(inventory.getItemID());
+            Inventory inventory = new Inventory(inventoryId, startDateStr, userId, item.getItemID(), tagId, item.getRemark(),
+                    item.getCategoryID(), categoryDesc.getCategoryDesc(), item.getStatusID(), locationID, NewLoc.getLocationDesc(),
+                    NewLoc.getFullLocationDesc(), item.getLocationID(), OldLoc.getLocationDesc(), OldLoc.getFullLocationDesc());
+
+            App.get().getDB().inventoryDao().insert(inventory);
         }
     }
 
     private void showValidationDialog() {
-        if (itemList == null || itemList.isEmpty()) {
+        if (inventoryList == null || inventoryList.isEmpty()) {
             finish();
             return;
         }
 
-        randomItem = itemList.get(new Random().nextInt(itemList.size()));
+        randomInventory = inventoryList.get(new Random().nextInt(inventoryList.size()));
+
+        Item item = App.get().getDB().itemDao().getItemsByItemID(randomInventory.getItemID());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Validation Required");
         builder.setMessage("Please take a photo of the following item:\n\n" +
-                "Item Barcode:       " + randomItem.getItemBarCode() + "\n\n" +
-                "Item Description:  " + randomItem.getItemDesc() + "\n\n" +
-                "Item Status:           " + randomItem.getStatus());
+                "Item Barcode:       " + item.getItemBarCode() + "\n\n" +
+                "Item Description:  " + item.getItemDesc() + "\n\n" +
+                "Item OPT3:           " + item.getOpt3());
 
         builder.setPositiveButton("Take Photo", (dialog, which) -> {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
             } else {
                 startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), REQUEST_IMAGE_CAPTURE);
-
             }
         });
 
@@ -216,7 +339,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
                     Bitmap bitmap = data.getParcelableExtra("data");
                     if (bitmap != null) {
                         byte[] imageData = bitmapToByteArray(bitmap);
-                        App.get().getDB().itemDao().updateItemImage(imageData, randomItem.getItemBarCode());
+                        App.get().getDB().itemDao().updateItemImage(imageData, randomInventory.getItemBarcode());
                         finish();
                     }
                 } else {
@@ -241,15 +364,12 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         showValidationDialog();
     }
 
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-
         if(requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE){
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 rfidHandler.onCreate(this);
-            }
-            else {
+            } else {
                 Toast.makeText(this, "Bluetooth Permissions not granted", Toast.LENGTH_SHORT).show();
             }
         }
@@ -274,11 +394,11 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         rfidHandler.onResume();
     }
 
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//        rfidHandler.onDestroy();
-//    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        rfidHandler.onDestroy();
+    }
 
     @Override
     public void handleTagdata(TagData[][] tagDataArray) {
@@ -289,7 +409,6 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
                 tagId = tagData[index].getTagID();
 
                 if (uniqueTagIDs.add(tagId)) {
-//                    changeItemStatus(tagId);
                     changeItemInventoryStatus(tagId);
                 }
             }
@@ -298,7 +417,28 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                updateRecyclerView();
+                int selectedTabPosition = tabLayout.getSelectedTabPosition();
+                switch (selectedTabPosition) {
+                    case 0:
+                        allTagsList = new ArrayList<>();
+                        if (allTagsList != null) {
+                            allTagsList.clear();
+                            allTagsList.addAll(registredInventoryList);
+                            allTagsList.addAll(unregistredInventoryList);
+                        }
+                        allTagsList.addAll(registredInventoryList);
+                        allTagsList.addAll(unregistredInventoryList);
+                        break;
+                    case 1:
+                        updateRecyclerView(registredInventoryList, registeredItemsList);
+                        break;
+                    case 2:
+                        updateRecyclerView(missingInventoryList, missingItemsList);
+                        break;
+                    case 3:
+                        updateRecyclerView(unregistredInventoryList, unregisteredItemsList);
+                        break;
+                }
             }
         });
     }
@@ -309,7 +449,28 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    updateRecyclerView();
+                    int selectedTabPosition = tabLayout.getSelectedTabPosition();
+                    switch (selectedTabPosition) {
+                        case 0:
+                            allTagsList = new ArrayList<>();
+                            if (allTagsList != null) {
+                                allTagsList.clear();
+                                allTagsList.addAll(registredInventoryList);
+                                allTagsList.addAll(unregistredInventoryList);
+                            }
+                            allTagsList.addAll(registredInventoryList);
+                            allTagsList.addAll(unregistredInventoryList);
+                            break;
+                        case 1:
+                            updateRecyclerView(registredInventoryList, registeredItemsList);
+                            break;
+                        case 2:
+                            updateRecyclerView(missingInventoryList, missingItemsList);
+                            break;
+                        case 3:
+                            updateRecyclerView(unregistredInventoryList, unregisteredItemsList);
+                            break;
+                    }
                 }
             });
             rfidHandler.performInventory();

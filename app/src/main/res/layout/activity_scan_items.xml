@@ -5,103 +5,82 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/gradient_background"
     tools:context=".ScanItems.ScanItems">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        android:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <RadioGroup
-        android:id="@+id/radioGroupTags"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:orientation="horizontal">
+        app:layout_constraintWidth_percent="1.0">
 
         <TextView
+            android:id="@+id/pageTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Show Tags: "
-            android:layout_marginLeft="7dp"
-            android:textSize="16sp"
+            android:layout_marginTop="18dp"
+            android:text="@string/inventory"
+            android:textSize="30sp"
+            android:textColor="@color/pageName"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/ipEditText"
+            app:layout_constraintVertical_bias="0.0" />
 
-        <RadioButton
-            android:id="@+id/radioRegisteredTags"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Registered Tags" />
+    </androidx.appcompat.widget.Toolbar>
 
-        <RadioButton
-            android:id="@+id/radioUnregisteredTags"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:text="Unregistered Tags" />
-    </RadioGroup>
-
-    <LinearLayout
-        android:id="@+id/countTagsLayout"
-        android:layout_width="match_parent"
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/radioGroupTags"
+        android:background="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-
-        <TextView
-            android:id="@+id/uniqueCount"
-            android:layout_width="0dp"
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabAllTags"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Unique Tags:"
-            android:textSize="17sp"
-            android:textColor="@color/tags"
-            android:gravity="center"/>
+            android:layout_width="wrap_content"
+            android:text="All Tags" />
 
-        <TextView
-            android:id="@+id/registeredCount"
-            android:layout_width="0dp"
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabRegisteredTags"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Registered Tags:"
-            android:textColor="@color/tags"
-            android:gravity="center" />
+            android:layout_width="wrap_content"
+            android:text="Registered" />
 
-        <TextView
-            android:id="@+id/unregisteredCount"
-            android:layout_width="0dp"
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabMissingTags"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Unregistered Tags:"
-            android:textColor="@color/tags"
-            android:gravity="center" />
-    </LinearLayout>
+            android:layout_width="wrap_content"
+            android:text="Missing" />
+
+        <com.google.android.material.tabs.TabItem
+            android:id="@+id/tabUnregisteredTags"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:text="Unregistered" />
+    </com.google.android.material.tabs.TabLayout>
 
     <LinearLayout
         android:id="@+id/countTagsData"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/countTagsLayout"
+        android:background="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/tabLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
         <TextView
-            android:id="@+id/uniqueCountData"
+            android:id="@+id/allCountData"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -112,6 +91,16 @@
 
         <TextView
             android:id="@+id/registeredCountData"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0"
+            android:textSize="18sp"
+            android:textColor="@color/tagsCount"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/missingCountData"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -132,17 +121,6 @@
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewUnregisteredTags"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="5dp"
-        android:visibility="visible"
-        app:layout_constraintTop_toBottomOf="@id/countTagsData"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewItems"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -150,6 +128,19 @@
         app:layout_constraintTop_toBottomOf="@id/countTagsData"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toTopOf="@id/btnEnd" />
+
+    <Button
+        android:id="@+id/btnEnd"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:backgroundTint="@color/button3"
+        android:text="END"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintWidth_percent="0.6" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

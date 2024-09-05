@@ -1,9 +1,10 @@
-package com.SmartScan.ScanItems;
+package com.SmartScan.Assign;
 
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.SmartScan.Assign.AssignTags;
 import com.zebra.rfid.api3.Antennas;
 import com.zebra.rfid.api3.ENUM_TRANSPORT;
 import com.zebra.rfid.api3.ENUM_TRIGGER_MODE;
@@ -34,14 +35,14 @@ import com.zebra.scannercontrol.IDcsSdkApiDelegate;
 import com.zebra.scannercontrol.SDKHandler;
 
 
-public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderEventHandler {
+public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReaderEventHandler {
     final static String TAG = "RFID_SAMPLE";
     private Readers readers;
     private ArrayList<ReaderDevice> availableRFIDReaderList;
     private ReaderDevice readerDevice;
     private RFIDReader reader;
     private EventHandler eventHandler;
-    private ScanItems context;
+    private AssignTags context;
     private SDKHandler sdkHandler;
     private ArrayList<DCSScannerInfo> scannerList;
     private int scannerID;
@@ -49,7 +50,7 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     private int MAX_POWER = 270;
     String readerName = "RFD4031-G10B700-US";
 
-    void onCreate(ScanItems activity) {
+    void onCreate(AssignTags activity) {
         context = activity;
         scannerList = new ArrayList<>();
         InitSDK();
@@ -300,12 +301,12 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                 MAX_POWER = reader.ReaderCapabilities.getTransmitPowerLevelValues().length - 1;
                 // set antenna configurations
                 Antennas.AntennaRfConfig config = reader.Config.Antennas.getAntennaRfConfig(1);
-                config.setTransmitPowerIndex(MAX_POWER);
-                config.setrfModeTableIndex(0);
-                config.setTari(0);
-//                config.setTransmitPowerIndex(2);
-//                config.setReceiveSensitivityIndex(0);
-//                config.setTransmitPowerIndex(1);
+//                config.setTransmitPowerIndex(MAX_POWER);
+//                config.setrfModeTableIndex(0);
+//                config.setTari(0);
+                config.setTransmitPowerIndex(2);
+                config.setReceiveSensitivityIndex(0);
+                config.setTransmitPowerIndex(1);
                 reader.Config.Antennas.setAntennaRfConfig(1, config);
                 // Set the singulation control
                 Antennas.SingulationControl s1_singulationControl = reader.Config.Antennas.getSingulationControl(1);

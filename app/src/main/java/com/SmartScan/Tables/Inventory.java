@@ -1,191 +1,169 @@
 package com.SmartScan.Tables;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "inventory")
+import java.io.ByteArrayOutputStream;
 
+@Entity(tableName = "inventory")
 public class Inventory {
-    @PrimaryKey(autoGenerate = false)
+    @PrimaryKey(autoGenerate = true)
     private int ID;
 
-    @ColumnInfo (name = "inventory_id")
+    @ColumnInfo(name = "inventory_id")
     private int InventoryID;
 
-    @ColumnInfo (name = "inventory_date")
+    @ColumnInfo(name = "inventory_date")
     private String InventoryDate;
 
-    @ColumnInfo (name = "user_id")
+    @ColumnInfo(name = "user_id")
     private int UserID;
 
-    @ColumnInfo (name = "item_id")
+    @ColumnInfo(name = "item_id")
     private int ItemID;
 
-    @ColumnInfo (name = "item_barcode")
+    @ColumnInfo(name = "item_barcode")
     private String ItemBarcode;
 
-    @ColumnInfo (name = "remark")
+    @ColumnInfo(name = "remark")
     private String Remark;
 
-    @ColumnInfo (name = "category_id")
+    @ColumnInfo(name = "category_id")
     private String CategoryId;
 
-    @ColumnInfo (name = "category_desc")
+    @ColumnInfo(name = "category_desc")
     private String CategoryDesc;
 
-    @ColumnInfo (name = "status_id")
+    @ColumnInfo(name = "status_id")
     private int StatusID;
 
-    @ColumnInfo (name = "status")
-    private String Status;
-
-    @ColumnInfo (name = "location_id")
+    @ColumnInfo(name = "location_id")
     private String LocationID;
 
-    @ColumnInfo (name = "location_desc")
+    @ColumnInfo(name = "location_desc")
     private String LocationDesc;
 
-    @ColumnInfo (name = "full_location_desc")
+    @ColumnInfo(name = "full_location_desc")
     private String FullLocationDesc;
 
-    @ColumnInfo (name = "scanned")
+    @ColumnInfo(name = "scanned")
     private boolean Scanned;
 
-    @ColumnInfo (name = "missing")
+    @ColumnInfo(name = "missing")
     private boolean Missing;
 
-    @ColumnInfo (name = "manual")
+    @ColumnInfo(name = "manual")
     private boolean Manual;
 
-    @ColumnInfo (name = "reallocated")
+    @ColumnInfo(name = "reallocated")
     private boolean Reallocated;
 
-    @ColumnInfo (name = "old_location_id")
+    @ColumnInfo(name = "old_location_id")
     private String OldLocationID;
 
-    @ColumnInfo (name = "old_location_desc")
+    @ColumnInfo(name = "old_location_desc")
     private String OldLocationDesc;
 
-    @ColumnInfo (name = "old_full_location_desc")
+    @ColumnInfo(name = "old_full_location_desc")
     private String OldFullLocationDesc;
 
-    @ColumnInfo (name = "status_updated")
+    @ColumnInfo(name = "status_updated")
     private boolean StatusUpdated;
 
-    @ColumnInfo (name = "reallocated_applied")
+    @ColumnInfo(name = "reallocated_applied")
     private boolean ReallocatedApplied;
 
-    @ColumnInfo (name = "status_applied")
+    @ColumnInfo(name = "status_applied")
     private boolean StatusApplied;
 
-    @ColumnInfo (name = "missing_applied")
+    @ColumnInfo(name = "missing_applied")
     private boolean MissingApplied;
 
-    @ColumnInfo (name = "is_checked")
-    private boolean IsChecked;
+//    @ColumnInfo(name = "is_checked")
+//    private boolean IsChecked;
 
-    @ColumnInfo (name = "registered")
+    @ColumnInfo(name = "registered")
     private boolean Registered;
 
-    @ColumnInfo (name = "created_by")
+    @ColumnInfo(name = "created_by")
     private int CreatedBy;
 
-    @ColumnInfo (name = "creation_date")
+    @ColumnInfo(name = "creation_date")
     private String CreationDate;
 
-    @ColumnInfo (name = "modified_by")
+    @ColumnInfo(name = "modified_by")
     private int ModifiedBy;
 
-    @ColumnInfo (name = "modification_date")
+    @ColumnInfo(name = "modification_date")
     private String ModificationDate;
 
-    @ColumnInfo (name = "reason_id")
+    @ColumnInfo(name = "reason_id")
     private int ReasonID;
 
-    @ColumnInfo (name = "opt3")
-    private String Opt3;
+    @Ignore
+    public Bitmap image;
+
+    @ColumnInfo(name = "image_data")
+    public byte[] imageData;
+
 
     public Inventory() {
     }
 
-    public Inventory(int itemID, String itemBarcode, String remark, String categoryId, String categoryDesc, int statusID,
-                     String locationID, String locationDesc, String fullLocationDesc, boolean scanned, boolean missing,
-                     boolean reallocated, String oldLocationID, String oldLocationDesc, String oldFullLocationDesc,
-                     boolean statusUpdated, boolean reallocatedApplied, boolean registered, String inventoryDate, int userID) {
-        ItemID = itemID;
-        ItemBarcode = itemBarcode;
-        Remark = remark;
-        CategoryId = categoryId;
-        CategoryDesc = categoryDesc;
-        StatusID = statusID;
-        LocationID = locationID;
-        LocationDesc = locationDesc;
-        FullLocationDesc = fullLocationDesc;
-        Scanned = scanned;
-        Missing = missing;
-        Reallocated = reallocated;
-        OldLocationID = oldLocationID;
-        OldLocationDesc = oldLocationDesc;
-        OldFullLocationDesc = oldFullLocationDesc;
-        StatusUpdated = statusUpdated;
-        ReallocatedApplied = reallocatedApplied;
-        Registered = registered;
-        InventoryDate = inventoryDate;
-        UserID = userID;
-        InventoryID = -1;
-        Manual = false;
-        StatusApplied = false;
-        MissingApplied = false;
-        IsChecked = false;
-        CreatedBy = -1;
-        CreationDate = null;
-        ModifiedBy = -1;
-        ModificationDate = null;
-        ReasonID = -1;
-        Status = "Missing";
+    // Constructor for the insert an item in Inventory Table
+    public Inventory(int inventoryID, String inventoryDate, int userID, int itemID, String opt3, String remark, String categoryId,
+                     String categoryDesc, int statusID, String locationID, String locationDesc, String fullLocationDesc) {
+        InventoryID = inventoryID;              // From Inventory_H
+        InventoryDate = inventoryDate;          // From Inventory_H
+        UserID = userID;                        // From Users
+        ItemID = itemID;                        // From Item
+        ItemBarcode = opt3;                     // From Item
+        Remark = remark;                        // From Item
+        CategoryId = categoryId;                // From Item
+        CategoryDesc = categoryDesc;            // From Category
+        StatusID = statusID;                    // From Item
+        LocationID = locationID;                // From Item
+        LocationDesc = locationDesc;            // From Location
+        FullLocationDesc = fullLocationDesc;    // From Location
+        Scanned = false;            // The item is not scanned yet
+        Missing = true;             // The item is still missing
+        Manual = false;             // The item is not manually added
+        Reallocated = false;        // The item is not reallocated
+        CreatedBy = userID;         // The item is created by the user
     }
 
-    public Inventory(int ID, int inventoryID, String inventoryDate, int userID, int itemID, String itemBarcode, String remark,
-                     String categoryId, String categoryDesc, int statusID, String locationID, String locationDesc, String fullLocationDesc,
-                     boolean scanned, boolean missing, boolean manual, boolean reallocated, String oldLocationID, String oldLocationDesc,
-                     String oldFullLocationDesc, boolean statusUpdated, boolean reallocatedApplied, boolean statusApplied,
-                     boolean missingApplied, boolean isChecked, boolean registered, int createdBy, String creationDate,
-                     int modifiedBy, String modificationDate, int reasonID) {
-        this.ID = ID;
-        InventoryID = inventoryID;
-        InventoryDate = inventoryDate;
-        UserID = userID;
-        ItemID = itemID;
-        ItemBarcode = itemBarcode;
-        Remark = remark;
-        CategoryId = categoryId;
-        CategoryDesc = categoryDesc;
-        StatusID = statusID;
-        LocationID = locationID;
-        LocationDesc = locationDesc;
-        FullLocationDesc = fullLocationDesc;
-        Scanned = scanned;
-        Missing = missing;
-        Manual = manual;
-        Reallocated = reallocated;
-        OldLocationID = oldLocationID;
-        OldLocationDesc = oldLocationDesc;
-        OldFullLocationDesc = oldFullLocationDesc;
-        StatusUpdated = statusUpdated;
-        ReallocatedApplied = reallocatedApplied;
-        StatusApplied = statusApplied;
-        MissingApplied = missingApplied;
-        IsChecked = isChecked;
-        Registered = registered;
-        CreatedBy = createdBy;
-        CreationDate = creationDate;
-        ModifiedBy = modifiedBy;
-        ModificationDate = modificationDate;
-        ReasonID = reasonID;
-        Status = "Missing";
+    // Constructor for the reallocation of an item in Inventory Table
+    public Inventory(int inventoryID, String inventoryDate, int userID, int itemID, String opt3, String remark, String categoryId,
+                     String categoryDesc, int statusID, String locationID, String locationDesc, String fullLocationDesc,
+                     String oldLocationID, String oldLocationDesc,  String oldFullLocationDesc) {
+        InventoryID = inventoryID;              // From Inventory_H
+        InventoryDate = inventoryDate;          // From Inventory_H
+        UserID = userID;                        // From Users
+        ItemID = itemID;                        // From Item
+        ItemBarcode = opt3;                     // From Item
+        Remark = remark;                        // From Item
+        CategoryId = categoryId;                // From Item
+        CategoryDesc = categoryDesc;            // From Category
+        StatusID = statusID;                    // From Item
+        LocationID = locationID;                // From the new Location
+        LocationDesc = locationDesc;            // From the new Location
+        FullLocationDesc = fullLocationDesc;    // From the new Location
+        Scanned = true;                // The item is scanned
+        Missing = false;               // The item is not missing
+        Manual = false;                // The item is not manually added
+        Reallocated = true;            // The item is reallocated
+        OldLocationID = oldLocationID;              // The item is reallocated, the locationID is the old from Item
+        OldLocationDesc = oldLocationDesc;          // The item is reallocated, the locationDesc is not old
+        OldFullLocationDesc = oldFullLocationDesc;  // The item is reallocated, the fullLocationDesc is not old
+        CreatedBy = userID;         // The item is created by the user
     }
 
+    // Getter and Setter methods
     public int getID() {
         return ID;
     }
@@ -378,13 +356,13 @@ public class Inventory {
         MissingApplied = missingApplied;
     }
 
-    public boolean isChecked() {
-        return IsChecked;
-    }
-
-    public void setChecked(boolean checked) {
-        IsChecked = checked;
-    }
+//    public boolean isChecked() {
+//        return IsChecked;
+//    }
+//
+//    public void setChecked(boolean checked) {
+//        IsChecked = checked;
+//    }
 
     public boolean isRegistered() {
         return Registered;
@@ -434,11 +412,31 @@ public class Inventory {
         ReasonID = reasonID;
     }
 
-    public String getStatus() {
-        return Status;
+    public Bitmap getImage() {
+        return image = byteArrayToBitmap(imageData);
     }
 
-    public void setStatus(String status) {
-        Status = status;
+    public void setImage(Bitmap image) {
+        this.image = image;
+        this.imageData = bitmapToByteArray(image);
+    }
+
+    public byte[] getImageData() {
+        return imageData;
+    }
+
+    public void setImageData(byte[] imageData) {
+        this.imageData = imageData;
+        this.image = byteArrayToBitmap(imageData);
+    }
+
+    private byte[] bitmapToByteArray(Bitmap bitmap) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        return stream.toByteArray();
+    }
+
+    private Bitmap byteArrayToBitmap(byte[] byteArray) {
+        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
     }
 }

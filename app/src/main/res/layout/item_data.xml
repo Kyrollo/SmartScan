@@ -94,29 +94,6 @@
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="5dp" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Status:"
-            android:textStyle="bold"
-            android:textSize="14sp" />
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2.4"
-            android:text="status" />
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
         android:layout_height="4dp"
         android:layout_marginTop="18dp"
         android:background="#CCCCCCCC" />

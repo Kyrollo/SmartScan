@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText usernameEditText, passwordEditText;
     private TextView linkTextView;
     private Button loginButton;
-    //private AppDataBase db;
+    private int userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,9 +53,11 @@ public class MainActivity extends AppCompatActivity {
         String password = passwordEditText.getText().toString();
 
         if (validateUser(username, password)) {
+            userId = App.get().getDB().usersDao().getUserByUsernameAndPassword(username, password).getUserID();
           //  Toast.makeText(getApplicationContext(), getString(R.string.login_successfully), Toast.LENGTH_LONG).show();
             Intent intent = new Intent(MainActivity.this, HomeActivity.class);
             intent.putExtra("USERNAME", " " + username);
+            intent.putExtra("USERID", userId);
             startActivity(intent);
         } else {
             Toast.makeText(getApplicationContext(), getString(R.string.login_failed), Toast.LENGTH_LONG).show();

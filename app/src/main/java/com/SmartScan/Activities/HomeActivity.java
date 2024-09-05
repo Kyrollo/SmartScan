@@ -33,6 +33,7 @@ import com.SmartScan.API.Retrofit;
 import com.SmartScan.ApiClasses.*;
 
 import com.SmartScan.App;
+import com.SmartScan.Assign.AssignTags;
 import com.SmartScan.Bluetooth.BluetoothConnectionActivity;
 import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
@@ -53,23 +54,19 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private TextView sessionName, startDate, endDate;
     private Button btnStart;
     private DrawerLayout drawerLayout;
-    LinearLayout invSession;
-  //  private AppDataBase db;;
     private APIService apiService;
     private List<ItemResponse> items;
     private List<CategoryResponse> categories;
     private List<LocationResponse> locations;
     private List<StatusResponse> allStatus;
     private List<InventoryH_Response> inventoriesH;
-    private SharedPreferences sharedPreferences;
-    private String ip;
-    private int port;
     private FrameLayout progressBarLayout;
     private ProgressBar progressBar;
     private TextView tvStatus;
     private Handler handler = new Handler();
     private int progress = 0;
-    private AlertDialog progressDialog;
+    private String username, startDateStr;
+    private int userId, inventoryId;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -101,8 +98,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         apiService = Retrofit.getRetrofit().create(APIService.class);
 
         btnStart.setOnClickListener(v -> {
-
+            List<InventoryH> inventoryHS = App.get().getDB().inventoryH_dao().getAllInventoryHs();
+            InventoryH inventoryH = inventoryHS.get(0);
+            inventoryId = inventoryH.getInventoryID();
+            startDateStr = inventoryH.getStartDate();
             Intent intent = new Intent(this, LocationActivity.class);
+            intent.putExtra("INVENTORYID", inventoryId);
+            intent.putExtra("INVENTORYDATE", startDateStr);
+            intent.putExtra("USERID", userId);
             startActivity(intent);
         });
     }
@@ -145,7 +148,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         // Retrieve the username from the intent
         Intent intent = getIntent();
-        String username = intent.getStringExtra("USERNAME");
+        username = intent.getStringExtra("USERNAME");
+        userId = intent.getIntExtra("USERID", -1);
 
         // Find the TextView and set the username
         View headerView = navigationView.getHeaderView(0);
@@ -180,8 +184,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         // Restart the current activity
         Intent intent = getIntent();
-        String username = intent.getStringExtra("USERNAME");
+        username = intent.getStringExtra("USERNAME");
+        userId = intent.getIntExtra("USERID", -1);
         intent.putExtra("USERNAME", username);
+        intent.putExtra("PASSWORD", userId);
         startActivity(intent);
     }
 
@@ -192,8 +198,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     items = response.body();
                     if (items != null) {
-                        App.get().getDB().itemDao().deleteAll();
-                        App.get().getDB().itemDao().resetPrimaryKey();
                         insertItems(items);
                     }
                 } else {
@@ -224,8 +228,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     categories = response.body();
                     if (categories != null) {
-                        App.get().getDB().locationDao().deleteAll();
-                        App.get().getDB().locationDao().resetPrimaryKey();
                         insertCategories(categories);
                     }
                 } else {
@@ -255,8 +257,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     locations = response.body();
                     if (locations != null) {
-                        App.get().getDB().locationDao().deleteAll();
-                        App.get().getDB().locationDao().resetPrimaryKey();
                         insertLocations(locations);
                     }
                 } else {
@@ -287,8 +287,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     allStatus = response.body();
                     if (allStatus != null) {
-                        App.get().getDB().locationDao().deleteAll();
-                        App.get().getDB().locationDao().resetPrimaryKey();
                         insertStatus(allStatus);
                     }
                 } else {
@@ -318,8 +316,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 if (response.isSuccessful()) {
                     inventoriesH = response.body();
                     if (inventoriesH != null) {
-                        App.get().getDB().locationDao().deleteAll();
-                        App.get().getDB().locationDao().resetPrimaryKey();
                         insertInventoryH(inventoriesH);
                     }
                 } else {
@@ -348,7 +344,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.downloadDataDialog))
                 .setMessage(getString(R.string.confirmDownloadDialog))
-                .setPositiveButton(getString(R.string.yesDownloadDialog), (dialog, which) -> downloadData())
+                .setPositiveButton(getString(R.string.yesDownloadDialog), (dialog, which) ->{
+                    deleteAllData();
+                    downloadData();
+                })
                 .setNegativeButton(getString(R.string.noDownloadDialog), (dialog, which) -> dialog.dismiss())
                 .create()
                 .show();
@@ -393,7 +392,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.deleteAllDialog))
                 .setMessage(getString(R.string.confirmDeleteDialog))
-                .setPositiveButton(getString(R.string.yesDeleteDialog), (dialog, which) -> deleteAllData())
+                .setPositiveButton(getString(R.string.yesDeleteDialog), (dialog, which) -> {
+                    deleteAllData();
+                    Toast.makeText(HomeActivity.this, getString(R.string.dataDeleted), Toast.LENGTH_SHORT).show();
+                })
                 .setNegativeButton(getString(R.string.noDeleteDialog), (dialog, which) -> dialog.dismiss())
                 .create()
                 .show();
@@ -410,8 +412,29 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         App.get().getDB().locationDao().resetPrimaryKey();
         App.get().getDB().statusDao().resetPrimaryKey();
         App.get().getDB().inventoryH_dao().resetPrimaryKey();
-        Toast.makeText(HomeActivity.this, getString(R.string.dataDeleted), Toast.LENGTH_SHORT).show();
+        App.get().getDB().inventoryDao().deleteAll();
+        App.get().getDB().inventoryDao().resetPrimaryKey();
+//        Toast.makeText(HomeActivity.this, getString(R.string.dataDeleted), Toast.LENGTH_SHORT).show();
         updateSessionData();
+    }
+
+    private void uploadData() {
+        List<Item> itemsUpload = App.get().getDB().itemDao().getAllItems();
+        apiService.uploadAssignedAssetsTag(itemsUpload).enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+                if (response.isSuccessful()) {
+//                    && !"Failure".equals(response.body())
+                    System.out.println("Response: " + response.body());
+                    Toast.makeText(getApplicationContext(), "Data uploaded successfully", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Failed to connect to the server", Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     @Override
@@ -420,10 +443,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         if (id == R.id.nav_download) {
             showDownloadDialog();
-//            hideProgressBar();
         }
         else if (id == R.id.nav_upload) {
-            // Handle upload data action
+            uploadData();
         }
         else if (id == R.id.nav_delete) {
             showDeleteDialog();
@@ -431,12 +453,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         else if (id == R.id.nav_bluetooth) {
             Intent intent = new Intent(this, BluetoothConnectionActivity.class);
             startActivity(intent);
-        }
-        else if (id == R.id.nav_server_config) {
+        } else if (id == R.id.nav_server_config) {
             Intent intent = new Intent(this, ServerConfigActivity.class);
             startActivity(intent);
-        }
-        else if (id == R.id.nav_logout) {
+        } else if (id == R.id.nav_assign_tags) {
+            Intent intent = new Intent(this, AssignTags.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_logout) {
             finish();
         }
 

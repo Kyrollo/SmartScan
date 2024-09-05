@@ -49,5 +49,17 @@
     <string name="choose_a_location">Please Choose a location</string>
     <string name="start_inventory">Start Inventory</string>
     <string name="location">Location</string>
-
+    <string name="inventory">Inventory</string>
+    <string name="barcode">Barcode</string>
+    <string name="rfid_tag">RFID Tag</string>
+    <string name="end">End</string>
+    <string name="assign_tags">Assign Tags</string>
+    <string name="activity_intent_filter_action"></string>
+    <string name="datawedge_intent_data_String">com.symbol.datawedge.data_string</string>
+    <string name="waiting_for_scan">Waiting for scan</string>
+    <string name="assign">Assign</string>
+    <string name="tag_assigned_successfully">Tag assigned successfully</string>
+    <string name="please_scan_the_barcode">Please scan the barcode</string>
+    <string name="please_scan_the_rfid">Please scan the rfid</string>
+    <string name="invalid_rfid">Invalid RFID</string>
 </resources>

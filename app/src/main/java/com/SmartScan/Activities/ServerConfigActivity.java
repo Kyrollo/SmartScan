@@ -165,6 +165,7 @@ public class ServerConfigActivity extends AppCompatActivity {
 //            }
         }
     }
+
     private void hideProgressBar() {
         progressBar.setVisibility(View.GONE);
     }

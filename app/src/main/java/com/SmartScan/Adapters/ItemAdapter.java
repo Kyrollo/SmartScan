@@ -11,18 +11,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Item;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder> {
     private List<Item> itemList;
 
     public ItemAdapter(List<Item> itemList) {
-        this.itemList = itemList;
-    }
-
-    public void updateData(List<Item> newItemList) {
-        this.itemList = newItemList;
-        notifyDataSetChanged();
+        this.itemList = itemList != null ? itemList : new ArrayList<>();
     }
 
     @NonNull
@@ -39,7 +35,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         holder.tvItemDesc.setText(item.getItemDesc());
         holder.tvRemark.setText(item.getRemark());
         holder.tvOpt3.setText(item.getOpt3());
-        holder.tvStatus.setText(item.getStatus());
     }
 
     @Override
@@ -47,8 +42,13 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         return itemList.size();
     }
 
+    public void updateData(List<Item> itemList) {
+        this.itemList = itemList != null ? itemList : new ArrayList<>();
+        notifyDataSetChanged();
+    }
+
     public static class ItemViewHolder extends RecyclerView.ViewHolder {
-        TextView tvItemBarCode, tvItemDesc, tvRemark, tvOpt3, tvStatus;
+        TextView tvItemBarCode, tvItemDesc, tvRemark, tvOpt3;
 
         public ItemViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -56,7 +56,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
             tvItemDesc = itemView.findViewById(R.id.tvItemDesc);
             tvRemark = itemView.findViewById(R.id.tvRemark);
             tvOpt3 = itemView.findViewById(R.id.tvOpt3);
-            tvStatus = itemView.findViewById(R.id.tvStatus);
         }
     }
 }

@@ -27,6 +27,8 @@ public class LocationActivity extends AppCompatActivity {
     private List<Location> parentLocations, locations2, locations3, locations4;
     private List<String> locationSpinner1, locationSpinner2, locationSpinner3, locationSpinner4;
     private String lastChosenLocationId;
+    private String startDateStr;
+    private int userId, inventoryId;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -50,8 +52,13 @@ public class LocationActivity extends AppCompatActivity {
         locationSpinner1 = new ArrayList<>();
         locationSpinner1.add(getString(R.string.choose_location));
 
+        retrieveData();
+
         btnStartInventory.setOnClickListener(v -> {
             Intent intent = new Intent(this, ScanItems.class);
+            intent.putExtra("INVENTORYID", inventoryId);
+            intent.putExtra("INVENTORYDATE", startDateStr);
+            intent.putExtra("USERID", userId);
             intent.putExtra("locationId", lastChosenLocationId);
             startActivity(intent);
         });
@@ -202,6 +209,13 @@ public class LocationActivity extends AppCompatActivity {
                 btnStartInventory.setVisibility(View.GONE);
             }
         });
+    }
+
+    private void retrieveData() {
+        Intent intent = getIntent();
+        userId = intent.getIntExtra("USERID", -1);
+        inventoryId = intent.getIntExtra("INVENTORYID", -1);
+        startDateStr = intent.getStringExtra("INVENTORYDATE");
     }
 
     private Location findLocationByDesc(List<Location> locations, String desc) {

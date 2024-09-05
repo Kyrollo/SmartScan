@@ -25,6 +25,6 @@ public interface UsersDao {
     @Query("DELETE FROM item")
     void deleteAll();
 
-    @Query("DELETE FROM sqlite_sequence WHERE name = 'item'")
+    @Query("DELETE FROM sqlite_sequence WHERE name = 'users'")
     void resetPrimaryKey();
 }

@@ -22,6 +22,10 @@
             android:id="@+id/nav_server_config"
             android:title="@string/server_configuration"
             android:icon="@drawable/ic_config"/>
+        <item
+            android:id="@+id/nav_assign_tags"
+            android:title="@string/assign_tags"
+            android:icon="@drawable/ic_qrcode"/>
     </group>
 
 
