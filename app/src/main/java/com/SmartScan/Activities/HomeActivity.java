@@ -51,6 +51,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private Button btnStart;
     private DrawerLayout drawerLayout;
     private APIService apiService;
+    private List<Users> users;
     private List<ItemResponse> items;
     private List<CategoryResponse> categories;
     private List<LocationResponse> locations;
@@ -337,13 +338,51 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         updateSessionData();
     }
 
+    private void fetchUsers() {
+        apiService.getUsers().enqueue(new Callback<List<Users>>() {
+            @Override
+            public void onResponse(Call<List<Users>> call, Response<List<Users>> response) {
+                if (response.isSuccessful()) {
+                    users = response.body();
+                    insertUsers();
+                } else {
+                    Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Users>> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
+                hideProgressBar();
+            }
+        });
+    }
+
+    private void insertUsers() {
+        if (users != null && !users.isEmpty()) {
+            App.get().getDB().usersDao().deleteAll();
+            App.get().getDB().usersDao().insertAll(users);
+        }
+    }
+
+    private void downloadData(){
+        List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
+
+        if (allInventory.size() == 0){
+            deleteAllData();
+            download();
+        } else {
+            showDownloadDialog();
+        }
+    }
+
     private void showDownloadDialog() {
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.downloadDataDialog))
                 .setMessage(getString(R.string.confirmDownloadDialog))
                 .setPositiveButton(getString(R.string.yesDownloadDialog), (dialog, which) ->{
                     deleteAllData();
-                    downloadData();
+                    download();
                 })
                 .setNegativeButton(getString(R.string.noDownloadDialog), (dialog, which) -> dialog.dismiss())
                 .create()
@@ -360,9 +399,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         });
     }
 
-    private void downloadData() {
+    private void download() {
         showProgressBar();
         progress = 0;
+        fetchUsers();
         fetchItems();
         fetchCategories();
         fetchLocations();
@@ -418,7 +458,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         List<Item> allItems = App.get().getDB().itemDao().getAllItems();
         List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
 
-        if (allItems.size() == 0 || allItems == null){
+        if (allItems.size() == 0){
             // No data to upload
             Toast.makeText(getApplicationContext(), "No data to upload", Toast.LENGTH_LONG).show();
             return;
@@ -426,7 +466,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             uploadItems();
         }
 
-        if (allInventory.size() == 0 || allInventory == null){
+        if (allInventory.size() == 0){
             // No data to upload
             return;
         } else {
@@ -511,7 +551,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_download) {
-            showDownloadDialog();
+            downloadData();
+//            showDownloadDialog();
         }
         else if (id == R.id.nav_upload) {
             uploadData();
