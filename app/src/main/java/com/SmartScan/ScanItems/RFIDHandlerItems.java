@@ -300,12 +300,10 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                 MAX_POWER = reader.ReaderCapabilities.getTransmitPowerLevelValues().length - 1;
                 // set antenna configurations
                 Antennas.AntennaRfConfig config = reader.Config.Antennas.getAntennaRfConfig(1);
-                config.setTransmitPowerIndex(MAX_POWER);
+                int average_power = MAX_POWER / 2;
+                config.setTransmitPowerIndex(average_power);
                 config.setrfModeTableIndex(0);
-                config.setTari(0);
-//                config.setTransmitPowerIndex(2);
-//                config.setReceiveSensitivityIndex(0);
-//                config.setTransmitPowerIndex(1);
+                config.setTari(1);
                 reader.Config.Antennas.setAntennaRfConfig(1, config);
                 // Set the singulation control
                 Antennas.SingulationControl s1_singulationControl = reader.Config.Antennas.getSingulationControl(1);

@@ -9,8 +9,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+
 import com.SmartScan.App;
-import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Users;
 
@@ -28,11 +28,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initViews();
-
-
-    //    db = AppDataBase.getDatabase(this);
-
-
     }
 
     private void initViews() {
@@ -54,19 +49,19 @@ public class MainActivity extends AppCompatActivity {
 
         if (validateUser(username, password)) {
             userId = App.get().getDB().usersDao().getUserByUsernameAndPassword(username, password).getUserID();
-          //  Toast.makeText(getApplicationContext(), getString(R.string.login_successfully), Toast.LENGTH_LONG).show();
             Intent intent = new Intent(MainActivity.this, HomeActivity.class);
             intent.putExtra("USERNAME", " " + username);
             intent.putExtra("USERID", userId);
             startActivity(intent);
+            finish();
         } else {
             Toast.makeText(getApplicationContext(), getString(R.string.login_failed), Toast.LENGTH_LONG).show();
         }
     }
 
     private boolean validateUser(String username, String password) {
-        List<Users> test = App.get().getDB().usersDao().getAllUsers();
         Users user = App.get().getDB().usersDao().getUserByUsernameAndPassword(username, password);
         return user != null;
     }
+
 }

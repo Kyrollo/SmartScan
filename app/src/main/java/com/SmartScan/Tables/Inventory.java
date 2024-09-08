@@ -84,8 +84,8 @@ public class Inventory {
     @ColumnInfo(name = "missing_applied")
     private boolean MissingApplied;
 
-//    @ColumnInfo(name = "is_checked")
-//    private boolean IsChecked;
+    @ColumnInfo(name = "checked")
+    private boolean IsChecked;
 
     @ColumnInfo(name = "registered")
     private boolean Registered;
@@ -356,13 +356,13 @@ public class Inventory {
         MissingApplied = missingApplied;
     }
 
-//    public boolean isChecked() {
-//        return IsChecked;
-//    }
-//
-//    public void setChecked(boolean checked) {
-//        IsChecked = checked;
-//    }
+    public boolean IsChecked() {
+        return IsChecked;
+    }
+
+    public void setIsChecked(boolean isChecked) {
+        IsChecked = isChecked;
+    }
 
     public boolean isRegistered() {
         return Registered;

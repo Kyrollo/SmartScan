@@ -22,7 +22,7 @@ public interface UsersDao {
     @Query("SELECT * FROM users WHERE UserName = :username AND Password = :password LIMIT 1")
     Users getUserByUsernameAndPassword(String username, String password);
 
-    @Query("DELETE FROM item")
+    @Query("DELETE FROM users")
     void deleteAll();
 
     @Query("DELETE FROM sqlite_sequence WHERE name = 'users'")

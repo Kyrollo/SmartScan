@@ -1,8 +1,5 @@
 package com.SmartScan.API;
 
-import androidx.room.Query;
-import androidx.room.Update;
-
 import com.SmartScan.ApiClasses.*;
 import com.SmartScan.Tables.Item;
 import com.SmartScan.Tables.Users;
@@ -37,5 +34,8 @@ public interface APIService {
     Call<List<InventoryH_Response>> getInventoryH();
 
     @POST("api/Upload/UploadAssignedAssetsTag")
-    Call<String> uploadAssignedAssetsTag(@Body List<Item> items);
+    Call<String> uploadAssignedAssetsTag(@Body List<UploadItems> items);
+
+    @POST("api/Upload/UploadData")
+    Call<String> uploadInventory(@Body List<UploadInventory> items);
 }

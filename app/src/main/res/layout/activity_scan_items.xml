@@ -40,7 +40,8 @@
         android:id="@+id/tabLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/tags"
+        app:tabTextColor="@color/white"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -74,7 +75,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="@color/white"
+        android:background="@color/edittextStroke"
         app:layout_constraintTop_toBottomOf="@id/tabLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -86,7 +87,7 @@
             android:layout_weight="1"
             android:text="0"
             android:textSize="18sp"
-            android:textColor="@color/tagsCount"
+            android:textColor="@color/white"
             android:gravity="center" />
 
         <TextView
@@ -96,7 +97,7 @@
             android:layout_weight="1"
             android:text="0"
             android:textSize="18sp"
-            android:textColor="@color/tagsCount"
+            android:textColor="@color/white"
             android:gravity="center" />
 
         <TextView
@@ -106,7 +107,7 @@
             android:layout_weight="1"
             android:text="0"
             android:textSize="18sp"
-            android:textColor="@color/tagsCount"
+            android:textColor="@color/white"
             android:gravity="center" />
 
         <TextView
@@ -116,7 +117,7 @@
             android:layout_weight="1"
             android:text="0"
             android:textSize="18sp"
-            android:textColor="@color/tagsCount"
+            android:textColor="@color/white"
             android:gravity="center" />
     </LinearLayout>
 
@@ -125,6 +126,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="5dp"
+        android:layout_marginBottom="15dp"
+        android:background="@drawable/recycleview_background"
         app:layout_constraintTop_toBottomOf="@id/countTagsData"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -134,9 +137,9 @@
         android:id="@+id/btnEnd"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="15dp"
         android:backgroundTint="@color/button3"
-        android:text="END"
+        android:text="@string/end"
         android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

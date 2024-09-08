@@ -39,7 +39,7 @@
         app:layout_constraintVertical_bias="0.25"
         app:layout_constraintWidth_percent="0.8" />
 
-    <TextView
+    <EditText
         android:id="@+id/rfidTextView"
         android:layout_width="match_parent"
         android:layout_height="48dp"
@@ -49,6 +49,8 @@
         android:hint="@string/rfid_tag"
         android:textColor="@color/black"
         android:textColorHint="@color/black"
+        android:focusable="false"
+        android:clickable="false"
         app:drawableStartCompat="@drawable/ic_rfid"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

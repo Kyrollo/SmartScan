@@ -198,6 +198,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
 
         // Open the missing tab by default
         openTab(2);
+        updateRecyclerView(missingInventoryList, missingItemsList);
 
         updateCountTextViews();
     }

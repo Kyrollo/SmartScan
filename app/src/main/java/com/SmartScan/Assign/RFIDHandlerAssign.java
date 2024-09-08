@@ -301,9 +301,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
                 MAX_POWER = reader.ReaderCapabilities.getTransmitPowerLevelValues().length - 1;
                 // set antenna configurations
                 Antennas.AntennaRfConfig config = reader.Config.Antennas.getAntennaRfConfig(1);
-//                config.setTransmitPowerIndex(MAX_POWER);
-//                config.setrfModeTableIndex(0);
-//                config.setTari(0);
                 config.setTransmitPowerIndex(2);
                 config.setReceiveSensitivityIndex(0);
                 config.setTransmitPowerIndex(1);

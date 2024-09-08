@@ -62,4 +62,5 @@
     <string name="please_scan_the_barcode">Please scan the barcode</string>
     <string name="please_scan_the_rfid">Please scan the rfid</string>
     <string name="invalid_rfid">Invalid RFID</string>
+    <string name="server_configuration_saved">Server configuration saved</string>
 </resources>

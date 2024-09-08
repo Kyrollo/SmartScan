@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import com.SmartScan.Dao.*;
 import com.SmartScan.Tables.*;
 
-@Database(entities = {Item.class, Users.class, Location.class, Category.class, Status.class, InventoryH.class, Inventory.class}, version = 18)
+@Database(entities = {Item.class, Users.class, Location.class, Category.class, Status.class, InventoryH.class, Inventory.class}, version = 22)
 public abstract class AppDataBase extends RoomDatabase {
     public abstract ItemDao itemDao();
     public abstract UsersDao usersDao();

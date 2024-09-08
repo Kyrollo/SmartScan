@@ -60,32 +60,28 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
             }
         });
 
-//        myBroadcastReceiverr = new BroadcastReceiver() {
-//            @Override
-//            public void onReceive(Context context, Intent intent) {
-//                String action = intent.getAction();
-//                if (action.equals(getResources().getString(R.string.activity_intent_filter_action))) {
-//                    String scannedData = intent.getStringExtra(getResources().getString(R.string.datawedge_intent_data_String));
-//                    barcodeEditText.setText(scannedData);
-//                }
-//            }
-//        };
+        myBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action.equals(getResources().getString(R.string.activity_intent_filter_action))) {
+                    String scannedData = intent.getStringExtra(getResources().getString(R.string.datawedge_intent_data_String));
+                    barcodeEditText.setText(scannedData);
+                }
+            }
+        };
 
         barcodeEditText.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                  if (keyCode == KeyEvent.KEYCODE_ENTER) {
                         return true;
-                    }
+                 }
                  else
                  {
                      return false;
                  }
-                    // Perform action on key press
-//                    String scannedData = barcodeEditText.getText().toString();
-//                    barcodeEditText.setText(scannedData);
-
-                }
+            }
 
         });
 

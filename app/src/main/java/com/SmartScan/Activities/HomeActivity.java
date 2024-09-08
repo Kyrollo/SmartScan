@@ -1,9 +1,7 @@
 package com.SmartScan.Activities;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -15,7 +13,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,24 +27,23 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.SmartScan.API.APIService;
 import com.SmartScan.API.Retrofit;
+import com.SmartScan.API.UploadInventory;
+import com.SmartScan.API.UploadItems;
 import com.SmartScan.ApiClasses.*;
 
 import com.SmartScan.App;
 import com.SmartScan.Assign.AssignTags;
-import com.SmartScan.Bluetooth.BluetoothConnectionActivity;
-import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
-import com.SmartScan.ScanAndCount.ScanAndCount;
 import com.SmartScan.Tables.*;
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private Toolbar toolbar;
@@ -189,6 +185,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         intent.putExtra("USERNAME", username);
         intent.putExtra("PASSWORD", userId);
         startActivity(intent);
+        finish();
     }
 
     private void fetchItems() {
@@ -414,25 +411,97 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         App.get().getDB().inventoryH_dao().resetPrimaryKey();
         App.get().getDB().inventoryDao().deleteAll();
         App.get().getDB().inventoryDao().resetPrimaryKey();
-//        Toast.makeText(HomeActivity.this, getString(R.string.dataDeleted), Toast.LENGTH_SHORT).show();
         updateSessionData();
     }
 
     private void uploadData() {
-        List<Item> itemsUpload = App.get().getDB().itemDao().getAllItems();
+        List<Item> allItems = App.get().getDB().itemDao().getAllItems();
+        List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
+
+        if (allItems.size() == 0 || allItems == null){
+            // No data to upload
+            Toast.makeText(getApplicationContext(), "No data to upload", Toast.LENGTH_LONG).show();
+            return;
+        } else {
+            uploadItems();
+        }
+
+        if (allInventory.size() == 0 || allInventory == null){
+            // No data to upload
+            return;
+        } else {
+            uploadInevntory();
+        }
+    }
+
+    private List getItemsUpload (){
+        List<Item> allItems = App.get().getDB().itemDao().getAllItems();
+        List <UploadItems> uploadData = new ArrayList<>();
+        for (Item item : allItems) {
+            UploadItems uploadItem = new UploadItems(item.ItemID,item.getItemBarCode(), item.getItemBarcodeAbb(),
+                    item.getItemDesc(), item.getItemSN(), item.getVendorID(),item.getInsurerID(), item.getPurchaseDate(),
+                    item.getWarrentyPeriod(), item.getCategoryID(), item.getLocationID(), item.getStatusID(),
+                    item.getItemCost(), item.getItemPrice(), item.getPONumber(), item.getItemLifeTime(), item.getItemUsagePeriod(),
+                    item.getItemSalvage(), item.getFactor(), item.getItemFirstInventoryDate(), item.getItemLastInventoryDate(),
+                    item.getItemQty(), item.getRemark(), item.getOpt1(), item.getOpt2(), item.getOpt3());
+            uploadData.add(uploadItem);
+        }
+        return uploadData;
+    }
+
+    private List getInevntoryUpload (){
+        List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
+        List <UploadInventory> uploadData = new ArrayList<>();
+        for (Inventory inventory : allInventory) {
+            UploadInventory uploadItem = new UploadInventory(inventory.getInventoryID(), inventory.getInventoryDate(), inventory.getUserID(),
+                    inventory.getItemID(), inventory.getItemBarcode(), inventory.getRemark(), inventory.getCategoryId(),
+                    inventory.getCategoryDesc(), inventory.getStatusID(), inventory.getLocationID(), inventory.getLocationDesc(),
+                    inventory.getFullLocationDesc(), inventory.isScanned(), inventory.isMissing(), inventory.isManual(), inventory.isReallocated(),
+                    inventory.getOldLocationID(), inventory.getOldLocationDesc(), inventory.getOldFullLocationDesc(), inventory.isStatusUpdated(),
+                    inventory.isReallocatedApplied(), inventory.isStatusApplied(), inventory.isMissingApplied(), inventory.IsChecked(),
+                    inventory.isRegistered(), inventory.getCreatedBy(), inventory.getCreationDate(), inventory.getModifiedBy(),
+                    inventory.getModificationDate(), inventory.getReasonID());
+            uploadData.add(uploadItem);
+        }
+        return uploadData;
+    }
+
+    private void uploadItems() {
+        List<UploadItems> itemsUpload = getItemsUpload();
         apiService.uploadAssignedAssetsTag(itemsUpload).enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
-                if (response.isSuccessful()) {
-//                    && !"Failure".equals(response.body())
-                    System.out.println("Response: " + response.body());
+                if (response.isSuccessful() && "Success".equals(response.body())) {
                     Toast.makeText(getApplicationContext(), "Data uploaded successfully", Toast.LENGTH_LONG).show();
+                }
+                else {
+                    Toast.makeText(getApplicationContext(), "Failed to upload items", Toast.LENGTH_LONG).show();
                 }
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "Failed to connect to the server", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "Failed to upload items", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void uploadInevntory() {
+        List<UploadInventory> inventoryUpload = getInevntoryUpload();
+        apiService.uploadInventory(inventoryUpload).enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+                if (response.isSuccessful() && "Success".equals(response.body())) {
+                    Toast.makeText(getApplicationContext(), "Data uploaded successfully", Toast.LENGTH_LONG).show();
+                }
+                else {
+                    Toast.makeText(getApplicationContext(), "Failed to upload inventory", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Failed to upload inventory", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -450,16 +519,17 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         else if (id == R.id.nav_delete) {
             showDeleteDialog();
         }
-        else if (id == R.id.nav_bluetooth) {
-            Intent intent = new Intent(this, BluetoothConnectionActivity.class);
-            startActivity(intent);
-        } else if (id == R.id.nav_server_config) {
+        else if (id == R.id.nav_server_config) {
             Intent intent = new Intent(this, ServerConfigActivity.class);
             startActivity(intent);
-        } else if (id == R.id.nav_assign_tags) {
+        }
+        else if (id == R.id.nav_assign_tags) {
             Intent intent = new Intent(this, AssignTags.class);
             startActivity(intent);
-        } else if (id == R.id.nav_logout) {
+        }
+        else if (id == R.id.nav_logout) {
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
             finish();
         }
 

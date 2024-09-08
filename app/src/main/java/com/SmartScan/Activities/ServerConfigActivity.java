@@ -1,8 +1,6 @@
 package com.SmartScan.Activities;
 
 
-import android.content.Context;
-
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -12,12 +10,10 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.SmartScan.ApiClasses.UserResponse;
 import com.SmartScan.API.APIService;
 import com.SmartScan.App;
 import com.SmartScan.API.Retrofit;
-import com.SmartScan.DataBase.AppDataBase;
+
 import com.SmartScan.Server.ServerConfig;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Users;
@@ -27,7 +23,6 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ServerConfigActivity extends AppCompatActivity {
     private EditText ipEditText, portEditText;
@@ -37,8 +32,6 @@ public class ServerConfigActivity extends AppCompatActivity {
     private ServerConfig config = new ServerConfig();
     private SharedPreferences sharedPreferences;
     private List<Users> users;
-    private String ip;
-    private int port;
     ProgressBar progressBar;
 
     @Override
@@ -48,22 +41,6 @@ public class ServerConfigActivity extends AppCompatActivity {
 
         initViews();
         getServerCredentials();
-        
-
-//        sharedPreferences = getSharedPreferences("ServerConfig", Context.MODE_PRIVATE);
-//
-//        ip = sharedPreferences.getString("ip", "");
-//        port = sharedPreferences.getInt("port", -1);
-//
-//        Retrofit retrofit = new Retrofit.Builder()
-//                .baseUrl("http://" + ip + ":" + port + "/")
-//                .addConverterFactory(GsonConverterFactory.create())
-//                .build();
-
-
-
-       // loadServerConfig();
-
 
     }
 
@@ -104,6 +81,7 @@ public class ServerConfigActivity extends AppCompatActivity {
                 return;
             }
             App.get().setServerCredentials(ipEditText.getText().toString(),portEditText.getText().toString());
+            Toast.makeText(this, getString(R.string.server_configuration_saved), Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -155,14 +133,7 @@ public class ServerConfigActivity extends AppCompatActivity {
 
         if (users != null && !users.isEmpty()) {
             App.get().getDB().usersDao().deleteAll();
-           // App.get().getDB().usersDao().resetPrimaryKey();
             App.get().getDB().usersDao().insertAll(users);
-//            for (UserResponse userResponse : users) {
-//                Users user = new Users();
-//                user.setUsername(userResponse.getUserName());
-//                user.setPassword(userResponse.getPassword());
-//                db.usersDao().insert(user);
-//            }
         }
     }
 
@@ -174,31 +145,4 @@ public class ServerConfigActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
     }
 
-    private void loadServerConfig() {
-        String ip = sharedPreferences.getString("ip", "");
-        int port = sharedPreferences.getInt("port", -1);
-        if (!ip.isEmpty() && port != -1) {
-            ipEditText.setText(ip);
-            portEditText.setText(String.valueOf(port));
-            config.setIp(ip);
-            config.setPort(port);
-        }
-    }
-
-    private void saveServerConfig(ServerConfig config) {
-        if (config.getIp().isEmpty() || config.getPort() == -1) {
-            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (config != null) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("ip", config.getIp());
-            editor.putInt("port", config.getPort());
-            editor.apply();
-            Toast.makeText(this, "Server configuration saved", Toast.LENGTH_SHORT).show();
-        } else{
-            Toast.makeText(this, "Failed to save server configuration", Toast.LENGTH_SHORT).show();
-        }
-    }
 }
