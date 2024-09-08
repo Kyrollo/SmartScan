@@ -13,6 +13,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Item Bar Code:"
+            android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="14sp" />
         <TextView
@@ -20,6 +21,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2.4"
+            android:textColor="@color/black"
             android:text="barcode" />
     </LinearLayout>
 
@@ -36,6 +38,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Item Desc:"
+            android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="14sp" />
         <TextView
@@ -43,6 +46,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2.4"
+            android:textColor="@color/black"
             android:text="description" />
     </LinearLayout>
 
@@ -59,6 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Remark:"
+            android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="14sp" />
         <TextView
@@ -66,6 +71,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2.4"
+            android:textColor="@color/black"
             android:text="remark" />
     </LinearLayout>
 
@@ -82,6 +88,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="OPT3:"
+            android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="14sp" />
         <TextView
@@ -89,6 +96,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2.4"
+            android:textColor="@color/black"
             android:text="opt3" />
     </LinearLayout>
 

@@ -63,4 +63,6 @@
     <string name="please_scan_the_rfid">Please scan the rfid</string>
     <string name="invalid_rfid">Invalid RFID</string>
     <string name="server_configuration_saved">Server configuration saved</string>
+    <string name="ip_validation">Fill the IP first</string>
+    <string name="port_validation">Fill the port first</string>
 </resources>

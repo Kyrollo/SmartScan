@@ -57,6 +57,14 @@ public class ServerConfigActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
 
         testConnectionButton.setOnClickListener(v -> {
+            if (ipEditText.getText().toString().isEmpty()) {
+                Toast.makeText(this, getString(R.string.ip_validation), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (portEditText.getText().toString().isEmpty()) {
+                Toast.makeText(this, getString(R.string.port_validation), Toast.LENGTH_SHORT).show();
+                return;
+            }
             showProgressBar();
             App.get().setServerCredentials(ipEditText.getText().toString(),portEditText.getText().toString());
 
@@ -80,6 +88,17 @@ public class ServerConfigActivity extends AppCompatActivity {
                 Toast.makeText(this, getString(R.string.test_connection_first), Toast.LENGTH_SHORT).show();
                 return;
             }
+            if (ipEditText.getText().toString().isEmpty()) {
+                Toast.makeText(this, getString(R.string.ip_validation), Toast.LENGTH_SHORT).show();
+                isTested = false;
+                return;
+            }
+            if (portEditText.getText().toString().isEmpty()) {
+                Toast.makeText(this, getString(R.string.port_validation), Toast.LENGTH_SHORT).show();
+                isTested = false;
+                return;
+            }
+
             App.get().setServerCredentials(ipEditText.getText().toString(),portEditText.getText().toString());
             Toast.makeText(this, getString(R.string.server_configuration_saved), Toast.LENGTH_SHORT).show();
         });

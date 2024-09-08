@@ -56,11 +56,13 @@
     <string name="assign_tags">تعيين العلامات</string>
     <string name="activity_intent_filter_action"></string>
     <string name="datawedge_intent_data_String">com.symbol.datawedge.data_string</string>
-    <string name="waiting_for_scan">Waiting for scan</string>
+    <string name="waiting_for_scan">في إنتظار المسح</string>
     <string name="assign">Assign</string>
     <string name="tag_assigned_successfully">Tag assigned successfully</string>
-    <string name="please_scan_the_barcode">Please scan the barcode</string>
-    <string name="please_scan_the_rfid">Please scan the rfid</string>
-    <string name="invalid_rfid">Invalid RFID</string>
+    <string name="please_scan_the_barcode">من فضلك ادخل الباركود</string>
+    <string name="please_scan_the_rfid">من فضلك امسح RFID</string>
+    <string name="invalid_rfid">غير صالح RFID</string>
     <string name="server_configuration_saved">Server configuration saved</string>
+    <string name="ip_validation">ادخل عنوان IP أولا</string>
+    <string name="port_validation">ادخل الport أولا</string>
 </resources>

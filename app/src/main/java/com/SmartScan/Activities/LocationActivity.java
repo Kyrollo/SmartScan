@@ -37,21 +37,7 @@ public class LocationActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_location);
 
-        spinner1 = findViewById(R.id.spinner1);
-        spinner2 = findViewById(R.id.spinner2);
-        spinner3 = findViewById(R.id.spinner3);
-        spinner4 = findViewById(R.id.spinner4);
-        btnStartInventory = findViewById(R.id.btnStartInventory);
-
-        spinner2.setVisibility(View.GONE);
-        spinner3.setVisibility(View.GONE);
-        spinner4.setVisibility(View.GONE);
-        btnStartInventory.setVisibility(View.GONE);
-
-        parentLocations = App.get().getDB().locationDao().getAllParents();
-        locationSpinner1 = new ArrayList<>();
-        locationSpinner1.add(getString(R.string.choose_location));
-
+        initializePage();
         retrieveData();
 
         btnStartInventory.setOnClickListener(v -> {
@@ -62,14 +48,6 @@ public class LocationActivity extends AppCompatActivity {
             intent.putExtra("locationId", lastChosenLocationId);
             startActivity(intent);
         });
-
-        for (Location location : parentLocations) {
-            locationSpinner1.add(location.getLocationDesc());
-        }
-
-        ArrayAdapter<String> adapter1 = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, locationSpinner1);
-        adapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner1.setAdapter(adapter1);
 
         spinner1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -97,9 +75,13 @@ public class LocationActivity extends AppCompatActivity {
                 for (Location location : locations2) {
                     locationSpinner2.add(location.getLocationDesc());
                 }
-                ArrayAdapter<String> adapter2 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner2);
-                adapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                ArrayAdapter<String> adapter2 = new ArrayAdapter<>(LocationActivity.this, R.layout.spinner_text_color, locationSpinner2);
+                adapter2.setDropDownViewResource(R.layout.spinner_text_color);
                 spinner2.setAdapter(adapter2);
+
+//                ArrayAdapter<String> adapter2 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner2);
+//                adapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//                spinner2.setAdapter(adapter2);
                 spinner2.setVisibility(View.VISIBLE);
                 spinner3.setVisibility(View.GONE);
                 spinner4.setVisibility(View.GONE);
@@ -139,9 +121,13 @@ public class LocationActivity extends AppCompatActivity {
                 for (Location location : locations3) {
                     locationSpinner3.add(location.getLocationDesc());
                 }
-                ArrayAdapter<String> adapter3 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner3);
-                adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                ArrayAdapter<String> adapter3 = new ArrayAdapter<>(LocationActivity.this, R.layout.spinner_text_color, locationSpinner3);
+                adapter3.setDropDownViewResource(R.layout.spinner_text_color);
                 spinner3.setAdapter(adapter3);
+
+//                ArrayAdapter<String> adapter3 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner3);
+//                adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//                spinner3.setAdapter(adapter3);
                 spinner3.setVisibility(View.VISIBLE);
                 spinner4.setVisibility(View.GONE);
                 btnStartInventory.setVisibility(View.GONE);
@@ -177,9 +163,13 @@ public class LocationActivity extends AppCompatActivity {
                 for (Location location : locations4) {
                     locationSpinner4.add(location.getLocationDesc());
                 }
-                ArrayAdapter<String> adapter4 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner4);
-                adapter4.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                ArrayAdapter<String> adapter4 = new ArrayAdapter<>(LocationActivity.this, R.layout.spinner_text_color, locationSpinner4);
+                adapter4.setDropDownViewResource(R.layout.spinner_text_color);
                 spinner4.setAdapter(adapter4);
+
+//                ArrayAdapter<String> adapter4 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner4);
+//                adapter4.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//                spinner4.setAdapter(adapter4);
                 spinner4.setVisibility(View.VISIBLE);
                 btnStartInventory.setVisibility(View.GONE);
             }
@@ -209,6 +199,37 @@ public class LocationActivity extends AppCompatActivity {
                 btnStartInventory.setVisibility(View.GONE);
             }
         });
+    }
+
+    private void initializePage(){
+
+
+        spinner1 = findViewById(R.id.spinner1);
+        spinner2 = findViewById(R.id.spinner2);
+        spinner3 = findViewById(R.id.spinner3);
+        spinner4 = findViewById(R.id.spinner4);
+        btnStartInventory = findViewById(R.id.btnStartInventory);
+
+        spinner2.setVisibility(View.GONE);
+        spinner3.setVisibility(View.GONE);
+        spinner4.setVisibility(View.GONE);
+        btnStartInventory.setVisibility(View.GONE);
+
+        parentLocations = App.get().getDB().locationDao().getAllParents();
+        locationSpinner1 = new ArrayList<>();
+        locationSpinner1.add(getString(R.string.choose_location));
+
+        for (Location location : parentLocations) {
+            locationSpinner1.add(location.getLocationDesc());
+        }
+
+        ArrayAdapter<String> adapter1 = new ArrayAdapter<>(this, R.layout.spinner_text_color, locationSpinner1);
+        adapter1.setDropDownViewResource(R.layout.spinner_text_color);
+        spinner1.setAdapter(adapter1);
+
+//        ArrayAdapter<String> adapter1 = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, locationSpinner1);
+//        adapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//        spinner1.setAdapter(adapter1);
     }
 
     private void retrieveData() {

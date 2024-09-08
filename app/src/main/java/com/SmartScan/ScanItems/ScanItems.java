@@ -36,7 +36,6 @@ import com.zebra.rfid.api3.TagData;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -173,12 +172,6 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         }
 
         allItemsList = new ArrayList<>();
-//        for (Inventory inventory : inventoryList) {
-//            Item item = App.get().getDB().itemDao().getItemsByItemID(inventory.getItemID());
-//            if (item != null) {
-//                allItemsList.add(item);
-//            }
-//        }
 
         recyclerView = findViewById(R.id.recyclerViewItems);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -302,12 +295,12 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     }
 
     private void showValidationDialog() {
-        if (inventoryList == null || inventoryList.isEmpty()) {
+        if (registredInventoryList == null || registredInventoryList.isEmpty()) {
             finish();
             return;
         }
 
-        randomInventory = inventoryList.get(new Random().nextInt(inventoryList.size()));
+        randomInventory = registredInventoryList.get(new Random().nextInt(registredInventoryList.size()));
 
         Item item = App.get().getDB().itemDao().getItemsByItemID(randomInventory.getItemID());
 

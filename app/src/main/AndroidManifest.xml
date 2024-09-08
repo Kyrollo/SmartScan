@@ -47,9 +47,6 @@
             android:name=".ScanItems.ScanItems"
             android:exported="false" />
         <activity
-            android:name=".ScanAndCount.ScanAndCount"
-            android:exported="false" />
-        <activity
             android:name=".Activities.HomeActivity"
             android:exported="false" />
         <activity

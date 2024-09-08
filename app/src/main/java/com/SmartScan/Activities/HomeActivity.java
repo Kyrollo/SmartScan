@@ -552,7 +552,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         if (id == R.id.nav_download) {
             downloadData();
-//            showDownloadDialog();
         }
         else if (id == R.id.nav_upload) {
             uploadData();

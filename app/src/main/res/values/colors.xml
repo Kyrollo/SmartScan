@@ -6,6 +6,8 @@
     <color name="hint">#DFDCDC</color>
     <color name="tags">#0B91A8</color>
     <color name="tagsCount">#84FF88</color>
+    <color name="spinner">#3BABD8</color>
+    <color name="spinnerBack">#9BDEFF</color>
     <color name="editText">#186790</color>
     <color name="edittextStroke">#228CC3</color>
     <color name="button">#cc2330</color>

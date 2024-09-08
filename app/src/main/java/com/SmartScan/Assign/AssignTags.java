@@ -41,11 +41,7 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_assign_tags);
 
-        barcodeEditText = findViewById(R.id.barcodeEditText);
-        rfidTextView = findViewById(R.id.rfidTextView);
-        btnEnd = findViewById(R.id.btnEnd);
-
-        rfidHandler = new RFIDHandlerAssign();
+        initializePage();
 
         btnEnd.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,6 +55,17 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
                 }
             }
         });
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
+            } else {
+                rfidHandler.onCreate(this);
+            }
+        } else {
+            rfidHandler.onCreate(this);
+        }
 
         myBroadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -74,13 +81,13 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
         barcodeEditText.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-                 if (keyCode == KeyEvent.KEYCODE_ENTER) {
-                        return true;
-                 }
-                 else
-                 {
-                     return false;
-                 }
+                if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
         });
@@ -89,24 +96,20 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
         filter.addCategory(Intent.CATEGORY_DEFAULT);
         filter.addAction(getResources().getString(R.string.activity_intent_filter_action));
         registerReceiver(myBroadcastReceiver, filter);
+    }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
-            } else {
-                rfidHandler.onCreate(this);
-            }
-        } else {
-            rfidHandler.onCreate(this);
-        }
+    private void initializePage() {
+        barcodeEditText = findViewById(R.id.barcodeEditText);
+        rfidTextView = findViewById(R.id.rfidTextView);
+        btnEnd = findViewById(R.id.btnEnd);
+
+        rfidHandler = new RFIDHandlerAssign();
     }
 
     private void assignTag(String barcode, String rfid) {
         App.get().getDB().itemDao().assignTag(barcode, rfid);
         Toast.makeText(this, R.string.tag_assigned_successfully, Toast.LENGTH_SHORT).show();
     }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
