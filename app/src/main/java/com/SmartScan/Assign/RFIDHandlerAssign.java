@@ -1,10 +1,10 @@
 package com.SmartScan.Assign;
 
 import android.os.AsyncTask;
-import android.util.Log;
-import android.widget.TextView;
+import android.os.Handler;
+import android.os.Looper;
 
-import com.SmartScan.Assign.AssignTags;
+import com.SmartScan.R;
 import com.zebra.rfid.api3.Antennas;
 import com.zebra.rfid.api3.ENUM_TRANSPORT;
 import com.zebra.rfid.api3.ENUM_TRIGGER_MODE;
@@ -36,7 +36,6 @@ import com.zebra.scannercontrol.SDKHandler;
 
 
 public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReaderEventHandler {
-    final static String TAG = "RFID_SAMPLE";
     private Readers readers;
     private ArrayList<ReaderDevice> availableRFIDReaderList;
     private ReaderDevice readerDevice;
@@ -47,7 +46,7 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
     private ArrayList<DCSScannerInfo> scannerList;
     private int scannerID;
     static MyAsyncTask cmdExecTask = null;
-    private int MAX_POWER = 270;
+    private int MAX_POWER = 300;
     String readerName = "RFD4031-G10B700-US";
 
     void onCreate(AssignTags activity) {
@@ -78,9 +77,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
 
     @Override
     public void dcssdkEventBarcode(byte[] barcodeData, int barcodeType, int fromScannerID) {
-//        String s = new String(barcodeData);
-//        context.barcodeData(s);
-//        Log.d(TAG,"barcaode ="+ s);
     }
 
     @Override
@@ -110,9 +106,10 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
 
     private boolean isReaderConnected() {
         if (reader != null && reader.isConnected())
+            // Reader is connected
             return true;
         else {
-            Log.d(TAG, "reader is not connected");
+            // Reader is not connected
             return false;
         }
     }
@@ -137,7 +134,7 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
     // RFID SDK
     //
     private void InitSDK() {
-        Log.d(TAG, "InitSDK");
+        context.showProgressBar();
         if (readers == null) {
             new CreateInstanceTask().execute();
         } else
@@ -148,7 +145,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
     private class CreateInstanceTask extends AsyncTask<Void, Void, Void> {
         @Override
         protected Void doInBackground(Void... voids) {
-            Log.d(TAG, "CreateInstanceTask");
             // Based on support available on host device choose the reader type
             InvalidUsageException invalidUsageException = null;
             readers = new Readers(context, ENUM_TRANSPORT.SERVICE_USB);
@@ -184,7 +180,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
     private class ConnectionTask extends AsyncTask<Void, Void, String> {
         @Override
         protected String doInBackground(Void... voids) {
-            Log.d(TAG, "ConnectionTask");
             GetAvailableReader();
             if (reader != null)
                 return connect();
@@ -198,7 +193,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
     }
 
     private synchronized void GetAvailableReader() {
-        Log.d(TAG, "GetAvailableReader");
         if (readers != null) {
             readers.attach(this);
             try {
@@ -212,7 +206,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
                         } else {
                             // search reader specified by name
                             for (ReaderDevice device : availableRFIDReaderList) {
-                                Log.d(TAG,"device: "+device.getName());
                                 if (device.getName().startsWith(readerName)) {
 
                                     readerDevice = device;
@@ -233,51 +226,61 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
     // handler for receiving reader appearance events
     @Override
     public void RFIDReaderAppeared(ReaderDevice readerDevice) {
-        Log.d(TAG, "RFIDReaderAppeared " + readerDevice.getName());
-        context.sendToast("RFIDReaderAppeared");
+        context.sendToast(context.getString(R.string.connecting_to_rfid_reader));
         connectReader();
     }
 
     @Override
     public void RFIDReaderDisappeared(ReaderDevice readerDevice) {
-        Log.d(TAG, "RFIDReaderDisappeared " + readerDevice.getName());
-        context.sendToast("RFIDReaderDisappeared");
+        context.sendToast(context.getString(R.string.rfid_reader_disappeared));
         if (readerDevice.getName().equals(reader.getHostName()))
             disconnect();
     }
 
-
     private synchronized String connect() {
         if (reader != null) {
-            Log.d(TAG, "connect " + reader.getHostName());
             try {
                 if (!reader.isConnected()) {
                     // Establish connection to the RFID Reader
                     reader.connect();
                     ConfigureReader();
 
-                    //Call this function if the readerdevice supports scanner to setup scanner SDK
+                    // Call this function if the reader device supports scanner to setup scanner SDK
                     setupScannerSDK();
-                    if(reader.isConnected()){
+                    if (reader.isConnected()) {
+                        context.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                context.hideProgressBar();
+                            }
+                        });
                         return "Connected: " + reader.getHostName();
                     }
-
                 }
             } catch (InvalidUsageException e) {
                 e.printStackTrace();
             } catch (OperationFailureException e) {
                 e.printStackTrace();
-                Log.d(TAG, "OperationFailureException " + e.getVendorMessage());
                 String des = e.getResults().toString();
+                context.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        context.hideProgressBar();
+                    }
+                });
                 return "Connection failed" + e.getVendorMessage() + " " + des;
             }
         }
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                context.hideProgressBar();
+            }
+        }, 5000); // 5 second delay
         return "";
     }
 
-    //not needed
     private void ConfigureReader() {
-        Log.d(TAG, "ConfigureReader " + reader.getHostName());
         if (reader.isConnected()) {
             TriggerInfo triggerInfo = new TriggerInfo();
             triggerInfo.StartTrigger.setTriggerType(START_TRIGGER_TYPE.START_TRIGGER_TYPE_IMMEDIATE);
@@ -331,7 +334,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
             DCSSDKDefs.DCSSDK_RESULT btResult = sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_LE);
             DCSSDKDefs.DCSSDK_RESULT btNormalResult = sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_NORMAL);
 
-            Log.d(TAG,btNormalResult+ " results "+ btResult);
             sdkHandler.dcssdkSetDelegate(this);
 
             int notifications_mask = 0;
@@ -360,8 +362,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
                     scannerList.add(scanner);
                 }
             }
-            else
-                Log.d(TAG,"Available scanners null");
 
         }
         if (reader != null )
@@ -384,7 +384,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
     }
 
     private synchronized void disconnect() {
-        Log.d(TAG, "Disconnect");
         try {
             if (reader != null) {
                 if (eventHandler != null)
@@ -394,8 +393,7 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
                     scannerList = null;
                 }
                 reader.disconnect();
-                context.sendToast("Disconnecting reader");
-                //reader = null;
+                context.sendToast(context.getString(R.string.disconnecting_reader));
             }
         } catch (InvalidUsageException e) {
             e.printStackTrace();
@@ -410,7 +408,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
         disconnect();
         try {
             if (reader != null) {
-                //Toast.makeText(getApplicationContext(), "Disconnecting reader", Toast.LENGTH_LONG).show();
                 reader = null;
                 readers.Dispose();
                 readers = null;
@@ -483,7 +480,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
                 outXML = new StringBuilder();
             }
             DCSSDKDefs.DCSSDK_RESULT result=sdkHandler.dcssdkExecuteCommandOpCodeInXMLForScanner(opCode,inXML,outXML,scannerID);
-            Log.d(TAG, "execute command returned " + result.toString() );
             if(result== DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_SUCCESS)
                 return true;
             else if(result==DCSSDKDefs.DCSSDK_RESULT.DCSSDK_RESULT_FAILURE)
@@ -498,26 +494,24 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
         public void eventReadNotify(RfidReadEvents e) {
             TagData[] myTags = reader.Actions.getReadTags(100);
             if (myTags != null) {
-                for (int index = 0; index < myTags.length; index++) {
-                    //  Log.d(TAG, "Tag ID " + myTags[index].getTagID());
-                    Log.d(TAG, "Tag ID" + myTags[index].getTagID() +"RSSI value "+ myTags[index].getPeakRSSI());
-                    Log.d(TAG, "RSSI value "+ myTags[index].getPeakRSSI());
-                    /* To get the RSSI value*/   //   Log.d(TAG, "RSSI value "+ myTags[index].getPeakRSSI());
-
-                }
+//                for (int index = 0; index < myTags.length; index++) {
+//                    //  Log.d(TAG, "Tag ID " + myTags[index].getTagID());
+//                    Log.d(TAG, "Tag ID" + myTags[index].getTagID() +"RSSI value "+ myTags[index].getPeakRSSI());
+//                    Log.d(TAG, "RSSI value "+ myTags[index].getPeakRSSI());
+//                    /* To get the RSSI value*/   //   Log.d(TAG, "RSSI value "+ myTags[index].getPeakRSSI());
+//
+//                }
                 new AsyncDataUpdate().execute(myTags);
             }
         }
 
         // Status Event Notification
         public void eventStatusNotify(RfidStatusEvents rfidStatusEvents) {
-            Log.d(TAG, "Status Notification: " + rfidStatusEvents.StatusEventData.getStatusEventType());
             if (rfidStatusEvents.StatusEventData.getStatusEventType() == STATUS_EVENT_TYPE.HANDHELD_TRIGGER_EVENT) {
                 if (rfidStatusEvents.StatusEventData.HandheldTriggerEventData.getHandheldEvent() == HANDHELD_TRIGGER_EVENT_TYPE.HANDHELD_TRIGGER_PRESSED) {
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
-                            Log.d(TAG,"HANDHELD_TRIGGER_PRESSED");
                             context.handleTriggerPress(true);
                             return null;
                         }
@@ -528,7 +522,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
                         @Override
                         protected Void doInBackground(Void... voids) {
                             context.handleTriggerPress(false);
-                            Log.d(TAG,"HANDHELD_TRIGGER_RELEASED");
                             return null;
                         }
                     }.execute();

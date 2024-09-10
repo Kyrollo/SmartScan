@@ -19,25 +19,23 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintWidth_percent="1.0">
 
-<!--        <TextView-->
-<!--            android:id="@+id/pageTitle"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginTop="18dp"-->
-<!--            android:text="@string/server_configuration"-->
-<!--            android:textSize="30sp"-->
-<!--            android:textColor="@color/pageName"-->
-<!--            android:textStyle="bold"-->
-<!--            android:layout_gravity="center"-->
-<!--            app:layout_constraintTop_toBottomOf="@id/toolbar"-->
-<!--            app:layout_constraintStart_toStartOf="parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            app:layout_constraintBottom_toTopOf="@id/ipEditText"-->
-<!--            app:layout_constraintVertical_bias="0.0" />-->
+        <TextView
+            android:id="@+id/pageTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/server_configuration"
+            android:textSize="30sp"
+            android:textColor="@color/pageName"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/ipEditText"
+            app:layout_constraintVertical_bias="0.0" />
 
     </androidx.appcompat.widget.Toolbar>
-
-
 
     <EditText
         android:id="@+id/ipEditText"
@@ -80,14 +78,15 @@
 
     <LinearLayout
         android:id="@+id/linearLayout"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="30dp"
         android:layout_marginEnd="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/portEditText">
+
         <Button
             android:id="@+id/testConnectionButton"
             android:layout_width="0dp"
@@ -120,14 +119,30 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintWidth_percent="0.8" />
     </LinearLayout>
-    <ProgressBar
-        android:id="@+id/progressBar"
+
+    <FrameLayout
+        android:id="@+id/progressBarContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
+        android:orientation="vertical"
+        android:padding="16dp"
         android:visibility="gone"
-        app:layout_constraintHorizontal_bias="0.459"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ipEditText" />
+        android:background="@color/progressBarBackground"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/progressIndicatorColor"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </FrameLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

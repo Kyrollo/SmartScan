@@ -10,14 +10,51 @@
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="1.0" />
+        app:layout_constraintWidth_percent="1.0">
 
+    <TextView
+        android:id="@+id/pageTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:padding="10dp"
+        android:text="@string/assign_tags"
+        android:textSize="30sp"
+        android:textColor="@color/pageName"
+        android:textStyle="bold"
+        android:layout_gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
+
+    </androidx.appcompat.widget.Toolbar>
+
+    <EditText
+        android:id="@+id/rfidTextView"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/rounded_edittext_background"
+        android:textAlignment="center"
+        android:hint="@string/rfid_tag"
+        android:textColor="@color/black"
+        android:textColorHint="@color/black"
+        android:focusable="false"
+        android:clickable="false"
+        app:drawableStartCompat="@drawable/ic_rfid"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintWidth_percent="0.8" />
 
     <EditText
         android:id="@+id/barcodeEditText"
@@ -34,40 +71,47 @@
         android:textColorHint="@color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rfidTextView"
         app:layout_constraintVertical_bias="0.25"
         app:layout_constraintWidth_percent="0.8" />
 
-    <EditText
-        android:id="@+id/rfidTextView"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewAssignTags"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="0dp"
         android:layout_marginTop="30dp"
-        android:background="@drawable/rounded_edittext_background"
-        android:textAlignment="center"
-        android:hint="@string/rfid_tag"
-        android:textColor="@color/black"
-        android:textColorHint="@color/black"
-        android:focusable="false"
-        android:clickable="false"
-        app:drawableStartCompat="@drawable/ic_rfid"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginBottom="30dp"
+        android:background="@drawable/recycleview_background"
         app:layout_constraintTop_toBottomOf="@id/barcodeEditText"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.25"
         app:layout_constraintWidth_percent="0.8" />
 
-    <Button
-        android:id="@+id/btnEnd"
-        android:layout_width="match_parent"
+    <FrameLayout
+        android:id="@+id/progressBarContainer"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
-        android:text="@string/assign"
-        android:textSize="18sp"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/button3"
-        app:layout_constraintTop_toBottomOf="@id/rfidTextView"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone"
+        android:background="@color/progressBarBackground"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/progressIndicatorColor"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

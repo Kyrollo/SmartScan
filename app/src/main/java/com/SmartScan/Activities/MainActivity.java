@@ -9,12 +9,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-
 import com.SmartScan.App;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Users;
 
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private EditText usernameEditText, passwordEditText;

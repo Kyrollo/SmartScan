@@ -1,9 +1,12 @@
 package com.SmartScan.Activities;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -41,6 +44,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -57,13 +64,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private List<LocationResponse> locations;
     private List<StatusResponse> allStatus;
     private List<InventoryH_Response> inventoriesH;
-    private FrameLayout progressBarLayout;
-    private ProgressBar progressBar;
+    private FrameLayout progressBarDownload;
+    private ProgressBar progressBar, progressBarUpload;
     private TextView tvStatus;
     private Handler handler = new Handler();
     private int progress = 0;
     private String username, startDateStr;
     private int userId, inventoryId;
+    private boolean isUploadItems = false, isUploadInventories = false;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -89,7 +97,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         btnStart = findViewById(R.id.btnStart);
         progressBar = findViewById(R.id.progressBar);
         tvStatus = findViewById(R.id.tvStatus);
-        progressBarLayout = findViewById(R.id.progressBarLayout);
+        progressBarDownload = findViewById(R.id.progressBarDownload);
+        progressBarUpload = findViewById(R.id.progressBarUpload);
 
 
         apiService = Retrofit.getRetrofit().create(APIService.class);
@@ -353,7 +362,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onFailure(Call<List<Users>> call, Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
-                hideProgressBar();
             }
         });
     }
@@ -366,6 +374,11 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void downloadData(){
+        if (!NetworkUtils.isNetworkConnected(this)) {
+            Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_LONG).show();
+            return;
+        }
+
         List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
 
         if (allInventory.size() == 0){
@@ -400,7 +413,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void download() {
-        showProgressBar();
+        showProgressBarDownload();
         progress = 0;
         fetchUsers();
         fetchItems();
@@ -411,18 +424,24 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                hideProgressBar();
-                Toast.makeText(getApplicationContext(), getString(R.string.data_downloaded_successfully), Toast.LENGTH_LONG).show();
+                if (!NetworkUtils.isNetworkConnected(HomeActivity.this)) {
+                    deleteAllData();
+                    hideProgressBarDownload();
+                    Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_downloading), Toast.LENGTH_LONG).show();
+                } else {
+                    hideProgressBarDownload();
+                    Toast.makeText(getApplicationContext(), getString(R.string.data_downloaded_successfully), Toast.LENGTH_LONG).show();
+                }
             }
         }, 5000);
     }
 
-    private void showProgressBar() {
-        progressBarLayout.setVisibility(View.VISIBLE);
+    private void hideProgressBarDownload() {
+        progressBarDownload.setVisibility(View.GONE);
     }
 
-    private void hideProgressBar() {
-        progressBarLayout.setVisibility(View.GONE);
+    private void showProgressBarDownload() {
+        progressBarDownload.setVisibility(View.VISIBLE);
     }
 
     private void showDeleteDialog() {
@@ -455,23 +474,52 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void uploadData() {
+        if (!NetworkUtils.isNetworkConnected(this)) {
+            Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_LONG).show();
+            return;
+        }
+
         List<Item> allItems = App.get().getDB().itemDao().getAllItems();
+        if (allItems.isEmpty()) {
+            Toast.makeText(getApplicationContext(), getString(R.string.no_data_to_upload), Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // start the progress bar
+        showProgressBarUpload();
+
+        upload();
+    }
+
+    private void upload() {
+        isUploadItems = false;
+        isUploadInventories = false;
+
         List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
-
-        if (allItems.size() == 0){
-            // No data to upload
-            Toast.makeText(getApplicationContext(), "No data to upload", Toast.LENGTH_LONG).show();
-            return;
-        } else {
-            uploadItems();
+        if (!allInventory.isEmpty()) {
+            uploadInventory();
         }
 
-        if (allInventory.size() == 0){
-            // No data to upload
-            return;
+        uploadItems();
+    }
+
+    private  void printUploadMessage() {
+        if (isUploadItems) {
+            Toast.makeText(getApplicationContext(), getString(R.string.data_uploaded_successfully), Toast.LENGTH_LONG).show();
         } else {
-            uploadInevntory();
+            Toast.makeText(getApplicationContext(), getString(R.string.failed_to_upload_data), Toast.LENGTH_LONG).show();
         }
+
+        // stop the progress bar
+        hideProgressBarUpload();
+    }
+
+    private void showProgressBarUpload() {
+        progressBarUpload.setVisibility(View.VISIBLE);
+    }
+
+    private void hideProgressBarUpload() {
+        progressBarUpload.setVisibility(View.GONE);
     }
 
     private List getItemsUpload (){
@@ -512,36 +560,33 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
                 if (response.isSuccessful() && "Success".equals(response.body())) {
-                    Toast.makeText(getApplicationContext(), "Data uploaded successfully", Toast.LENGTH_LONG).show();
-                }
-                else {
-                    Toast.makeText(getApplicationContext(), "Failed to upload items", Toast.LENGTH_LONG).show();
+                    isUploadItems = true;
+                    printUploadMessage();
                 }
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "Failed to upload items", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_uploading), Toast.LENGTH_LONG).show();
+                hideProgressBarUpload();
             }
         });
     }
 
-    private void uploadInevntory() {
+    private void uploadInventory() {
         List<UploadInventory> inventoryUpload = getInevntoryUpload();
         apiService.uploadInventory(inventoryUpload).enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
                 if (response.isSuccessful() && "Success".equals(response.body())) {
-                    Toast.makeText(getApplicationContext(), "Data uploaded successfully", Toast.LENGTH_LONG).show();
-                }
-                else {
-                    Toast.makeText(getApplicationContext(), "Failed to upload inventory", Toast.LENGTH_LONG).show();
+                    isUploadInventories = true;
                 }
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "Failed to upload inventory", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_uploading), Toast.LENGTH_LONG).show();
+                hideProgressBarUpload();
             }
         });
     }
@@ -583,6 +628,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             drawerLayout.closeDrawer(GravityCompat.START);
         } else {
             super.onBackPressed();
+        }
+    }
+
+    public static class NetworkUtils {
+        public static boolean isNetworkConnected(Context context) {
+            ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
         }
     }
 }

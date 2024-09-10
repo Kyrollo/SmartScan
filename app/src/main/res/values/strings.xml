@@ -65,4 +65,24 @@
     <string name="server_configuration_saved">Server configuration saved</string>
     <string name="ip_validation">Fill the IP first</string>
     <string name="port_validation">Fill the port first</string>
+    <string name="login">Login</string>
+    <string name="please_scan_rfid_first">Please scan RFID first</string>
+    <string name="please_scan_barcode">Please scan Barcode</string>
+    <string name="invalid_barcode">Invalid Barcode</string>
+    <string name="invalid_opt3">Invalid RFID</string>
+    <string name="rfid_tag_is_already_assigned">RFID tag is already assigned</string>
+    <string name="barcode_is_already_assigned">Barcode is already assigned</string>
+    <string name="opt3_deleted">OPT3 deleted</string>
+    <string name="no_data_to_upload">No data to upload</string>
+    <string name="data_uploaded_successfully">Data uploaded successfully</string>
+    <string name="failed_to_upload_data">Failed to upload Data</string>
+    <string name="no_internet_connection">No internet connection. Please connect to internet first</string>
+    <string name="internet_disconnected_while_downloading">Internet disconnected while downloading data. Please retry again</string>
+    <string name="internet_disconnected_while_uploading">Internet disconnected while uploading data. Please retry again</string>
+    <string name="connecting_to_rfid_reader">Connecting to RFID reader</string>
+    <string name="rfid_reader_disappeared">RFID reader disappeared</string>
+    <string name="disconnecting_reader">Disconnecting reader</string>
+    <string name="asset_rfid_tracking">Asset RFID Tracking</string>
+    <string name="bluetooth_disabled">Bluetooth is not enabled. Enable it to connect to RFID</string>
+    <string name="bluetooth_turned_off">Bluetooth is turned off. You need to enabled it</string>
 </resources>

@@ -30,10 +30,10 @@
                 android:layout_marginTop="18dp"
                 android:padding="10dp"
                 android:text="@string/inventory_info"
-                android:textSize="18sp"
+                android:textSize="30sp"
                 android:textColor="@color/pageName"
                 android:textStyle="bold"
-                android:layout_gravity="start"
+                android:layout_gravity="center"
                 app:layout_constraintTop_toBottomOf="@id/toolbar"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -50,9 +50,9 @@
             android:padding="18dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintVertical_bias="0.0" >
 
         <TextView
@@ -117,7 +117,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/end_date"
-            android:textSize="26sp"
+            android:textSize="16sp"
             android:layout_marginStart="20dp"
             android:layout_marginTop="20dp"
             android:textStyle="bold"
@@ -136,7 +136,7 @@
             android:layout_marginTop="16dp"
             android:text=""
             android:textColor="@color/black"
-            android:textSize="22sp"
+            android:textSize="16sp"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
@@ -150,7 +150,7 @@
             android:layout_marginTop="22dp"
             android:elevation="19dp"
             android:translationZ="24dp"
-            android:textSize="16sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:text="@string/choose_location"
             android:textColor="@color/white"
@@ -162,10 +162,9 @@
 
         </LinearLayout>
 
-
         <FrameLayout
-            android:id="@+id/progressBarLayout"
-            android:layout_width="0dp"
+            android:id="@+id/progressBarDownload"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp"
@@ -183,19 +182,46 @@
                 android:textAlignment="center"
                 android:textColor="@color/white"
                 android:text="@string/progress_bar_start"
-                android:layout_gravity="center"
+                android:layout_gravity="center_horizontal"
                 app:layout_constraintBottom_toTopOf="@id/progressBar" />
 
-            <com.google.android.material.progressindicator.LinearProgressIndicator
+            <com.google.android.material.progressindicator.CircularProgressIndicator
                 android:id="@+id/progressBar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="30dp"
-                android:layout_gravity="center"
-                android:progress="0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
+                android:layout_gravity="center_horizontal"
+                android:progress="40"
                 android:max="100"
-                android:progressTint="@color/tagsCount"
-                android:progressBackgroundTint="@color/tagsCount" />
+                app:indicatorColor="@color/progressIndicatorColor"
+                app:trackColor="@color/progressTrackColor" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/progressBarContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone"
+            android:background="@color/progressBarBackground"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ProgressBar
+                android:id="@+id/progressBarUpload"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:visibility="visible"
+                android:layout_gravity="center"
+                android:indeterminateTint="@color/progressIndicatorColor"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
         </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

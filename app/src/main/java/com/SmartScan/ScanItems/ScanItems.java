@@ -2,7 +2,11 @@ package com.SmartScan.ScanItems;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -11,6 +15,7 @@ import android.provider.MediaStore;
 
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.SmartScan.Adapters.ItemAdapter;
 import com.SmartScan.App;
 
+import com.SmartScan.Assign.AssignTags;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Category;
 import com.SmartScan.Tables.Inventory;
@@ -57,6 +63,8 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     private int userId, inventoryId;
     private TabLayout tabLayout;
     private Button btnEnd;
+    private FrameLayout progressBarLayout;
+    private BluetoothAdapter bluetoothAdapter;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -64,71 +72,34 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan_items);
 
-        recyclerView = findViewById(R.id.recyclerViewItems);
         rfidHandler = new RFIDHandlerItems();
 
         retrieveData();
 
         initializePage();
 
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                switch (tab.getPosition()) {
-                    case 0:
-                        allTagsList = new ArrayList<>();
-                        if (allTagsList != null) {
-                            allTagsList.clear();
-                            allTagsList.addAll(registredInventoryList);
-                            allTagsList.addAll(unregistredInventoryList);
-                        }
-                        allTagsList.addAll(registredInventoryList);
-                        allTagsList.addAll(unregistredInventoryList);
-                        updateRecyclerView(allTagsList, allItemsList);
-                        break;
-                    case 1:
-                        updateRecyclerView(registredInventoryList, registeredItemsList);
-                        break;
-                    case 2:
-                        updateRecyclerView(missingInventoryList, missingItemsList);
-                        break;
-                    case 3:
-                        updateRecyclerView(unregistredInventoryList, unregisteredItemsList);
-                        break;
-                }
-            }
+        initializeRfid();
 
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-                // Do nothing
-            }
+        initializeTabs();
 
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-                // Do nothing
-            }
-        });
+        buttonEnd();
+    }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
-            }else{
-                rfidHandler.onCreate(this);
-            }
+    public void showProgressBar() {
+        progressBarLayout.setVisibility(View.VISIBLE);
+    }
 
-        }else{
-            rfidHandler.onCreate(this);
-        }
+    public void hideProgressBar() {
+        progressBarLayout.setVisibility(View.GONE);
+    }
 
+    private void buttonEnd() {
         btnEnd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showValidationDialog();
             }
         });
-
     }
 
     private void retrieveData() {
@@ -137,6 +108,24 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         inventoryId = intent.getIntExtra("INVENTORYID", -1);
         startDateStr = intent.getStringExtra("INVENTORYDATE");
         locationID = intent.getStringExtra("locationId");
+    }
+
+    private void initializeRfid() {
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (!bluetoothAdapter.isEnabled()) {
+            Toast.makeText(this, getString(R.string.bluetooth_disabled), Toast.LENGTH_SHORT).show();
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
+            } else {
+                rfidHandler.onCreate(this);
+            }
+        } else {
+            rfidHandler.onCreate(this);
+        }
     }
 
     private void initializePage() {
@@ -186,6 +175,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         missingCountData = findViewById(R.id.missingCountData);
         unregisteredCountData = findViewById(R.id.unregisteredCountData);
         btnEnd = findViewById(R.id.btnEnd);
+        progressBarLayout = findViewById(R.id.progressBarLayout);
 
         recyclerView.setVisibility(View.VISIBLE);
 
@@ -194,6 +184,49 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         updateRecyclerView(missingInventoryList, missingItemsList);
 
         updateCountTextViews();
+
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(bluetoothStateReceiver, filter);
+    }
+
+    private void initializeTabs() {
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                switch (tab.getPosition()) {
+                    case 0:
+                        allTagsList = new ArrayList<>();
+                        if (allTagsList != null) {
+                            allTagsList.clear();
+                            allTagsList.addAll(registredInventoryList);
+                            allTagsList.addAll(unregistredInventoryList);
+                        }
+                        allTagsList.addAll(registredInventoryList);
+                        allTagsList.addAll(unregistredInventoryList);
+                        updateRecyclerView(allTagsList, allItemsList);
+                        break;
+                    case 1:
+                        updateRecyclerView(registredInventoryList, registeredItemsList);
+                        break;
+                    case 2:
+                        updateRecyclerView(missingInventoryList, missingItemsList);
+                        break;
+                    case 3:
+                        updateRecyclerView(unregistredInventoryList, unregisteredItemsList);
+                        break;
+                }
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                // Do nothing
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                // Do nothing
+            }
+        });
     }
 
     private void openTab(int tabPosition) {
@@ -272,7 +305,6 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
                 unregistredInventoryList.add(newInsertedInventory);
             } else {
                 runOnUiThread(() -> Toast.makeText(this, getString(R.string.invalid_rfid), Toast.LENGTH_SHORT).show());
-//                Toast.makeText(this, getString(R.string.invalid_rfid), Toast.LENGTH_SHORT).show();
             }
         } else {
             unregistredInventoryList.add(unregisteredInventory);
@@ -391,6 +423,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        unregisterReceiver(bluetoothStateReceiver);
         rfidHandler.onDestroy();
     }
 
@@ -482,4 +515,25 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
             }
         });
     }
+
+    private BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+                switch (state) {
+                    case BluetoothAdapter.STATE_OFF:
+                        // When Bluetooth turned off
+                        rfidHandler.onDestroy();
+                        Toast.makeText(context, getString(R.string.bluetooth_turned_off), Toast.LENGTH_SHORT).show();
+                        break;
+                    case BluetoothAdapter.STATE_ON:
+                        // When Bluetooth turned on
+                        rfidHandler.onCreate(ScanItems.this);
+                        break;
+                }
+            }
+        }
+    };
 }

@@ -1,11 +1,12 @@
 package com.SmartScan.Activities;
 
-
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -13,8 +14,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.SmartScan.API.APIService;
 import com.SmartScan.App;
 import com.SmartScan.API.Retrofit;
-
-import com.SmartScan.Server.ServerConfig;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Users;
 
@@ -29,10 +28,8 @@ public class ServerConfigActivity extends AppCompatActivity {
     private Button testConnectionButton, saveButton;
     private boolean isTested = false;
     private APIService apiService;
-    private ServerConfig config = new ServerConfig();
-    private SharedPreferences sharedPreferences;
     private List<Users> users;
-    ProgressBar progressBar;
+    FrameLayout progressBarContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +51,23 @@ public class ServerConfigActivity extends AppCompatActivity {
         portEditText = findViewById(R.id.portEditText);
         testConnectionButton = findViewById(R.id.testConnectionButton);
         saveButton = findViewById(R.id.saveButton);
-        progressBar = findViewById(R.id.progressBar);
+        progressBarContainer = findViewById(R.id.progressBarContainer);
+
+        TextWatcher textWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                isTested = false;
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        };
+
+        ipEditText.addTextChangedListener(textWatcher);
+        portEditText.addTextChangedListener(textWatcher);
 
         testConnectionButton.setOnClickListener(v -> {
             if (ipEditText.getText().toString().isEmpty()) {
@@ -66,16 +79,12 @@ public class ServerConfigActivity extends AppCompatActivity {
                 return;
             }
             showProgressBar();
-            App.get().setServerCredentials(ipEditText.getText().toString(),portEditText.getText().toString());
+            App.get().setServerCredentials(ipEditText.getText().toString(), portEditText.getText().toString());
 
-            try
-            {
+            try {
                 apiService = Retrofit.getRetrofit().create(APIService.class);
-
-            }
-            catch (Exception ex)
-            {
-                Toast.makeText(this, R.string.invalid_url_host,Toast.LENGTH_SHORT).show();
+            } catch (Exception ex) {
+                Toast.makeText(this, R.string.invalid_url_host, Toast.LENGTH_SHORT).show();
                 hideProgressBar();
                 return;
             }
@@ -99,7 +108,7 @@ public class ServerConfigActivity extends AppCompatActivity {
                 return;
             }
 
-            App.get().setServerCredentials(ipEditText.getText().toString(),portEditText.getText().toString());
+            App.get().setServerCredentials(ipEditText.getText().toString(), portEditText.getText().toString());
             Toast.makeText(this, getString(R.string.server_configuration_saved), Toast.LENGTH_SHORT).show();
         });
     }
@@ -157,11 +166,11 @@ public class ServerConfigActivity extends AppCompatActivity {
     }
 
     private void hideProgressBar() {
-        progressBar.setVisibility(View.GONE);
+        progressBarContainer.setVisibility(View.GONE);
     }
 
     private void showProgressBar() {
-        progressBar.setVisibility(View.VISIBLE);
+        progressBarContainer.setVisibility(View.VISIBLE);
     }
 
 }

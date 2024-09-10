@@ -79,9 +79,6 @@ public class LocationActivity extends AppCompatActivity {
                 adapter2.setDropDownViewResource(R.layout.spinner_text_color);
                 spinner2.setAdapter(adapter2);
 
-//                ArrayAdapter<String> adapter2 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner2);
-//                adapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//                spinner2.setAdapter(adapter2);
                 spinner2.setVisibility(View.VISIBLE);
                 spinner3.setVisibility(View.GONE);
                 spinner4.setVisibility(View.GONE);
@@ -125,9 +122,6 @@ public class LocationActivity extends AppCompatActivity {
                 adapter3.setDropDownViewResource(R.layout.spinner_text_color);
                 spinner3.setAdapter(adapter3);
 
-//                ArrayAdapter<String> adapter3 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner3);
-//                adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//                spinner3.setAdapter(adapter3);
                 spinner3.setVisibility(View.VISIBLE);
                 spinner4.setVisibility(View.GONE);
                 btnStartInventory.setVisibility(View.GONE);
@@ -167,9 +161,6 @@ public class LocationActivity extends AppCompatActivity {
                 adapter4.setDropDownViewResource(R.layout.spinner_text_color);
                 spinner4.setAdapter(adapter4);
 
-//                ArrayAdapter<String> adapter4 = new ArrayAdapter<>(LocationActivity.this, android.R.layout.simple_spinner_item, locationSpinner4);
-//                adapter4.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//                spinner4.setAdapter(adapter4);
                 spinner4.setVisibility(View.VISIBLE);
                 btnStartInventory.setVisibility(View.GONE);
             }
@@ -202,8 +193,6 @@ public class LocationActivity extends AppCompatActivity {
     }
 
     private void initializePage(){
-
-
         spinner1 = findViewById(R.id.spinner1);
         spinner2 = findViewById(R.id.spinner2);
         spinner3 = findViewById(R.id.spinner3);
@@ -227,9 +216,6 @@ public class LocationActivity extends AppCompatActivity {
         adapter1.setDropDownViewResource(R.layout.spinner_text_color);
         spinner1.setAdapter(adapter1);
 
-//        ArrayAdapter<String> adapter1 = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, locationSpinner1);
-//        adapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//        spinner1.setAdapter(adapter1);
     }
 
     private void retrieveData() {
