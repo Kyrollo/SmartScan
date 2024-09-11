@@ -30,8 +30,8 @@ public interface ItemDao {
     @Query("UPDATE item SET opt3 = null WHERE item_bar_code = :barcode")
     void deleteOPT3(String barcode);
 
-    @Query("UPDATE item SET image_data = :imageData WHERE item_bar_code = :barcode")
-    void updateItemImage(byte[] imageData, String barcode);
+    @Query("UPDATE item SET image_data = :imageData WHERE item_id = :itemid")
+    void SetItemImage(byte[] imageData, int itemid);
 
     @Query("SELECT * FROM item")
     List<Item> getAllItems();

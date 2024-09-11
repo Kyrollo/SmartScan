@@ -16,6 +16,7 @@ import com.SmartScan.App;
 import com.SmartScan.DataBase.AppDataBase;
 import com.SmartScan.R;
 import com.SmartScan.ScanItems.ScanItems;
+import com.SmartScan.Tables.Item;
 import com.SmartScan.Tables.Location;
 
 import java.util.ArrayList;
@@ -36,6 +37,9 @@ public class LocationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_location);
+
+        List<Item> allItems = App.get().getDB().itemDao().getAllItems();
+        int size = allItems.size();
 
         initializePage();
         retrieveData();

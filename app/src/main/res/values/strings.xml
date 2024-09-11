@@ -85,4 +85,17 @@
     <string name="asset_rfid_tracking">Asset RFID Tracking</string>
     <string name="bluetooth_disabled">Bluetooth is not enabled. Enable it to connect to RFID</string>
     <string name="bluetooth_turned_off">Bluetooth is turned off. You need to enabled it</string>
+    <string name="confirm">Confirm</string>
+    <string name="incorrect_password">Incorrect Password</string>
+    <string name="cancel">Cancel</string>
+    <string name="validation_required">Validation Required</string>
+    <string name="enter_admin_password">Enter Admin Password</string>
+    <string name="please_take_a_photo_of_the_following_item">Please take a photo of the following item:\n\n</string>
+    <string name="item_barcode">"Item Barcode:       "</string>
+    <string name="item_description">"Item Description:  "</string>
+    <string name="item_opt3">"Item OPT3:           "</string>
+    <string name="bluetooth_permissions_not_granted">Bluetooth Permissions not granted</string>
+    <string name="camera_permission_denied">Camera permission denied</string>
+    <string name="storage_permission_accepted">Storage permission accepted</string>
+    <string name="storage_permission_denied">Storage permission Denied</string>
 </resources>

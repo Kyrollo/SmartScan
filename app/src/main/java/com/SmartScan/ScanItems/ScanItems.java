@@ -9,10 +9,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -40,6 +43,9 @@ import com.google.android.material.tabs.TabLayout;
 import com.zebra.rfid.api3.TagData;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +65,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
+    private static final int REQUEST_WRITE_STORAGE = 300;
     private String locationID, startDateStr;
     private int userId, inventoryId;
     private TabLayout tabLayout;
@@ -83,6 +90,10 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         initializeTabs();
 
         buttonEnd();
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
+        }
     }
 
     public void showProgressBar() {
@@ -337,11 +348,11 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         Item item = App.get().getDB().itemDao().getItemsByItemID(randomInventory.getItemID());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Validation Required");
-        builder.setMessage("Please take a photo of the following item:\n\n" +
-                "Item Barcode:       " + item.getItemBarCode() + "\n\n" +
-                "Item Description:  " + item.getItemDesc() + "\n\n" +
-                "Item OPT3:           " + item.getOpt3());
+        builder.setTitle(getString((R.string.validation_required)));
+        builder.setMessage(getString(R.string.please_take_a_photo_of_the_following_item) +
+                getString(R.string.item_barcode) + item.getItemBarCode() + "\n\n" +
+                getString(R.string.item_description) + item.getItemDesc() + "\n\n" +
+                getString(R.string.item_opt3) + item.getOpt3());
 
         builder.setPositiveButton("Take Photo", (dialog, which) -> {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -356,6 +367,40 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         dialog.show();
     }
 
+    public void requestPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    Uri uri = Uri.parse("package:com.SmartScan");
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri);
+                    startActivity(intent);
+                    Toast.makeText(this, getString(R.string.storage_permission_accepted), Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(this, getString(R.string.storage_permission_denied), Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+
+    private void saveBitmapToFolder(Bitmap bitmap) {
+        File directory = new File(Environment.getExternalStorageDirectory(), "SmartScanImages");
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        String fileName = "IMG_" + System.currentTimeMillis() + ".png";
+        File file = new File(directory, fileName);
+
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+            Toast.makeText(this, "Image Saved", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -365,7 +410,8 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
                     Bitmap bitmap = data.getParcelableExtra("data");
                     if (bitmap != null) {
                         byte[] imageData = bitmapToByteArray(bitmap);
-                        App.get().getDB().itemDao().updateItemImage(imageData, randomInventory.getItemBarcode());
+                        App.get().getDB().itemDao().SetItemImage(imageData, randomInventory.getItemID());   // Save the image to the item in format array of bytes
+                        saveBitmapToFolder(bitmap);          // Save bitmap to folder in the mobile
                         finish();
                     }
                 } else {
@@ -392,11 +438,13 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if(requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE){
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 rfidHandler.onCreate(this);
             } else {
-                Toast.makeText(this, "Bluetooth Permissions not granted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.bluetooth_permissions_not_granted, Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -404,11 +452,17 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startActivityForResult(new Intent(MediaStore.ACTION_IMAGE_CAPTURE), REQUEST_IMAGE_CAPTURE);
             } else {
-                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.camera_permission_denied), Toast.LENGTH_SHORT).show();
             }
         }
 
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_WRITE_STORAGE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                requestPermission();
+            } else {
+                requestPermission();
+            }
+        }
     }
 
     @Override

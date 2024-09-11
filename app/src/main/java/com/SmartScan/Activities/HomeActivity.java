@@ -5,15 +5,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -84,7 +88,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         setupLanguageSwitching();
 
         updateSessionData();
-
     }
 
     private void initViews() {
@@ -444,6 +447,46 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         progressBarDownload.setVisibility(View.VISIBLE);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
+    private void showPasswordCard() {
+        View cardView = getLayoutInflater().inflate(R.layout.card_password_input, null);
+        EditText editTextPassword = cardView.findViewById(R.id.editTextPassword);
+
+        editTextPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_END = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                Drawable drawableEnd = editTextPassword.getCompoundDrawables()[DRAWABLE_END];
+                if (drawableEnd != null && event.getRawX() >= (editTextPassword.getRight() - drawableEnd.getBounds().width())) {
+                    if (editTextPassword.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+                        editTextPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                        editTextPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_open, 0);
+                    } else {
+                        editTextPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                        editTextPassword.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_eye_closed, 0);
+                    }
+                    editTextPassword.setSelection(editTextPassword.getText().length());
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        new AlertDialog.Builder(this)
+                .setView(cardView)
+                .setTitle(getString(R.string.validation_required))
+                .setPositiveButton(getString(R.string.confirm), (dialog, which) -> {
+                    String password = editTextPassword.getText().toString();
+                    if ("P@$$w0rd".equals(password)) {
+                        showDeleteDialog();
+                    } else {
+                        Toast.makeText(this, getString(R.string.incorrect_password), Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(getString(R.string.cancel), (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
+    }
+
     private void showDeleteDialog() {
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.deleteAllDialog))
@@ -602,7 +645,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             uploadData();
         }
         else if (id == R.id.nav_delete) {
-            showDeleteDialog();
+            showPasswordCard();
         }
         else if (id == R.id.nav_server_config) {
             Intent intent = new Intent(this, ServerConfigActivity.class);
@@ -627,7 +670,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            // Open navigation drawer
+            drawerLayout.openDrawer(GravityCompat.START);
         }
     }
 
@@ -639,3 +683,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 }
+
+    // Card view delete all (Done)
+    // Make sure array of bytes saved in the database (Done)
+    // Save validation pictures in path (Done)
+
+
+    // Bluetooth connection general (work)
+    // Scan Barcode when connect to RFID (يارب فك الضيقة)
+
+    // Upload array of bytes to the server (pending)
+
+    // Notes:
+    // Inventory item barcode = OPT3, need to add opt3 variable
