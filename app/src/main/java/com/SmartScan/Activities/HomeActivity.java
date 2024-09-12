@@ -40,6 +40,7 @@ import com.SmartScan.ApiClasses.*;
 
 import com.SmartScan.App;
 import com.SmartScan.Assign.AssignTags;
+import com.SmartScan.Bluetooth.BluetoothConnectionActivity;
 import com.SmartScan.R;
 import com.SmartScan.Tables.*;
 import com.google.android.material.navigation.NavigationView;
@@ -647,6 +648,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         else if (id == R.id.nav_delete) {
             showPasswordCard();
         }
+        else if (id == R.id.nav_bluetooth) {
+            Intent intent = new Intent(this, BluetoothConnectionActivity.class);
+            startActivity(intent);
+        }
         else if (id == R.id.nav_server_config) {
             Intent intent = new Intent(this, ServerConfigActivity.class);
             startActivity(intent);
@@ -683,7 +688,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 }
-
     // Card view delete all (Done)
     // Make sure array of bytes saved in the database (Done)
     // Save validation pictures in path (Done)
@@ -692,7 +696,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     // Bluetooth connection general (work)
     // Scan Barcode when connect to RFID (يارب فك الضيقة)
 
-    // Upload array of bytes to the server (pending)
+    // Upload array of bytes to the server (Dao and api) (pending)
 
     // Notes:
     // Inventory item barcode = OPT3, need to add opt3 variable

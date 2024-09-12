@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.SmartScan.Adapters.TagAdapter;
 import com.SmartScan.App;
+import com.SmartScan.Bluetooth.BluetoothHandler;
 import com.SmartScan.R;
 
 import com.SmartScan.Tables.Item;
@@ -35,8 +36,8 @@ import com.zebra.rfid.api3.TagData;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.RFIDHandlerListener {
-    private RFIDHandlerAssign rfidHandler;
+public class AssignTags extends AppCompatActivity implements BluetoothHandler.RFIDHandlerBluetoothListener {
+    private BluetoothHandler rfidHandler;
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
     private BroadcastReceiver myBroadcastReceiver;
     private EditText barcodeEditText;
@@ -74,9 +75,11 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
             } else {
+//                rfidHandler.onCreate(this);
                 rfidHandler.onCreate(this);
             }
         } else {
+//            rfidHandler.onCreate(this);
             rfidHandler.onCreate(this);
         }
     }
@@ -94,7 +97,8 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
         rfidTextView = findViewById(R.id.rfidTextView);
         progressBarContainer = findViewById(R.id.progressBarContainer);
 
-        rfidHandler = new RFIDHandlerAssign();
+//        rfidHandler = new RFIDHandlerAssign();
+        rfidHandler = new BluetoothHandler();
 
         recyclerView = findViewById(R.id.recyclerViewAssignTags);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -230,6 +234,7 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if(requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE){
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                rfidHandler.onCreate(this);
                 rfidHandler.onCreate(this);
             } else {
                 Toast.makeText(this, "Bluetooth Permissions not granted", Toast.LENGTH_SHORT).show();
@@ -259,7 +264,7 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(bluetoothStateReceiver);
-        rfidHandler.onDestroy();
+//        rfidHandler.onDestroy();
     }
 
     @Override
@@ -321,6 +326,7 @@ public class AssignTags extends AppCompatActivity implements RFIDHandlerAssign.R
                         break;
                     case BluetoothAdapter.STATE_ON:
                         // When Bluetooth turned on
+//                        rfidHandler.onCreate(AssignTags.this);
                         rfidHandler.onCreate(AssignTags.this);
                         break;
                 }

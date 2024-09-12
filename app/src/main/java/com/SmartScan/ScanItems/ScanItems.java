@@ -34,6 +34,7 @@ import com.SmartScan.Adapters.ItemAdapter;
 import com.SmartScan.App;
 
 import com.SmartScan.Assign.AssignTags;
+import com.SmartScan.Bluetooth.BluetoothHandler;
 import com.SmartScan.R;
 import com.SmartScan.Tables.Category;
 import com.SmartScan.Tables.Inventory;
@@ -52,14 +53,15 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFIDHandlerListener {
+public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFIDHandlerBluetoothListener {
     private RecyclerView recyclerView;
     private ItemAdapter itemAdapter;
     private List<Inventory> inventoryList, registredInventoryList, missingInventoryList, allTagsList, unregistredInventoryList, AllInventoryList;
     private List<Item> registeredItemsList, unregisteredItemsList, missingItemsList, allItemsList;
     private Set<String> uniqueTagIDs = new HashSet<>();
     private Set<String> unregisteredTags = new HashSet<>();
-    private RFIDHandlerItems rfidHandler;
+//    private RFIDHandlerItems rfidHandler;
+    private BluetoothHandler rfidHandler;
     private Inventory randomInventory;
     TextView allCountData, registeredCountData, unregisteredCountData, missingCountData;
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
@@ -79,7 +81,8 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan_items);
 
-        rfidHandler = new RFIDHandlerItems();
+//        rfidHandler = new RFIDHandlerItems();
+        rfidHandler = new BluetoothHandler();
 
         retrieveData();
 
@@ -132,9 +135,11 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
             } else {
+//                rfidHandler.onCreate(this);
                 rfidHandler.onCreate(this);
             }
         } else {
+//          rfidHandler.onCreate(this);
             rfidHandler.onCreate(this);
         }
     }
@@ -442,6 +447,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
 
         if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                rfidHandler.onCreate(this);
                 rfidHandler.onCreate(this);
             } else {
                 Toast.makeText(this, R.string.bluetooth_permissions_not_granted, Toast.LENGTH_SHORT).show();
@@ -478,7 +484,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(bluetoothStateReceiver);
-        rfidHandler.onDestroy();
+//        rfidHandler.onDestroy();
     }
 
     @Override
@@ -584,6 +590,7 @@ public class ScanItems extends AppCompatActivity implements RFIDHandlerItems.RFI
                         break;
                     case BluetoothAdapter.STATE_ON:
                         // When Bluetooth turned on
+//                        rfidHandler.onCreate(this);
                         rfidHandler.onCreate(ScanItems.this);
                         break;
                 }

@@ -44,7 +44,7 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     private ScanItems context;
     private SDKHandler sdkHandler;
     private ArrayList<DCSScannerInfo> scannerList;
-    private int scannerID;
+//    private int scannerID;
     static MyAsyncTask cmdExecTask = null;
     private int MAX_POWER = 270;
     String readerName = "RFD4031-G10B700-US";
@@ -298,8 +298,6 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                 // tag event with tag data
                 reader.Events.setTagReadEvent(true);
                 reader.Events.setAttachTagDataWithReadEvent(false);
-                // set trigger mode as rfid so scanner beam will not come
-                reader.Config.setTriggerMode(ENUM_TRIGGER_MODE.RFID_MODE, true);
                 // set start and stop triggers
                 reader.Config.setStartTrigger(triggerInfo.StartTrigger);
                 reader.Config.setStopTrigger(triggerInfo.StopTrigger);
@@ -377,7 +375,7 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                     try
                     {
                         sdkHandler.dcssdkEstablishCommunicationSession(device.getScannerID());
-                        scannerID= device.getScannerID();
+//                        scannerID= device.getScannerID();
                     }
                     catch (Exception e) {
                         e.printStackTrace();
@@ -393,7 +391,7 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                 if (eventHandler != null)
                     reader.Events.removeEventsListener(eventHandler);
                 if (sdkHandler != null) {
-                    sdkHandler.dcssdkTerminateCommunicationSession(scannerID);
+//                    sdkHandler.dcssdkTerminateCommunicationSession(scannerID);
                     scannerList = null;
                 }
                 reader.disconnect();
@@ -441,11 +439,11 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         }
     }
 
-    public void scanCode(){
-        String in_xml = "<inArgs><scannerID>" + scannerID+ "</scannerID></inArgs>";
-        cmdExecTask = new MyAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_DEVICE_PULL_TRIGGER, null);
-        cmdExecTask.execute(new String[]{in_xml});
-    }
+//    public void scanCode(){
+//        String in_xml = "<inArgs><scannerID>" + scannerID+ "</scannerID></inArgs>";
+//        cmdExecTask = new MyAsyncTask(scannerID, DCSSDKDefs.DCSSDK_COMMAND_OPCODE.DCSSDK_DEVICE_PULL_TRIGGER, null);
+//        cmdExecTask.execute(new String[]{in_xml});
+//    }
 
     private class MyAsyncTask extends AsyncTask<String, Integer, Boolean> {
         int scannerId;

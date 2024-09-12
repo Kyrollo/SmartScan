@@ -537,7 +537,6 @@ public class RFIDHandlerAssign implements IDcsSdkApiDelegate, Readers.RFIDReader
                     }
                 }.execute();
             }
-
         }
     }
 

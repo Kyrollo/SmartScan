@@ -38,9 +38,6 @@ public class LocationActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_location);
 
-        List<Item> allItems = App.get().getDB().itemDao().getAllItems();
-        int size = allItems.size();
-
         initializePage();
         retrieveData();
 
