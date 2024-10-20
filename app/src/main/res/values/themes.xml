@@ -8,5 +8,5 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="Theme.SmartScan" parent="Base.Theme.SmartScan" />
+    <style name="Theme.AssetTrckingRFID" parent="Base.Theme.SmartScan" />
 </resources>

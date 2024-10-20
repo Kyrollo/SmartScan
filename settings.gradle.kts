@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SmartScan"
+rootProject.name = "AssetTrackingRFID"
 include(":app")
  

@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.SmartScan"
+    namespace = "com.AssetTrckingRFID"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.SmartScan"
+        applicationId = "com.AssetTrckingRFID"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.room.runtime)
     implementation(libs.activity)
+    implementation(libs.okhttp3.logging.interceptor)
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.10.00"))
     androidTestImplementation(libs.ui.test.junit4)
     annotationProcessor(libs.room.compiler)

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Smart Scan</string>
+    <string name="app_name">Asset Tracking RFID</string>
     <string name="ibex_solutions">IBEX Solutions</string>
     <string name="session_name">Session Name:</string>
     <string name="start_date">Start Date:</string>
@@ -19,7 +19,7 @@
     <string name="save">Save</string>
     <string name="server_configuration">Server Configuration</string>
     <string name="test_connection_first">Please test the connection first</string>
-    <string name="connection_succeeded">Connection Succeeded</string>
+    <string name="connection_succeeded">Connected Successfully</string>
     <string name="failed_to_connect_check_your_internet">Failed to connect! Check your internet.</string>
     <string name="login_successfully">Login Successfully</string>
     <string name="login_failed">Invalid credentials. Please re-write your username and password.</string>
@@ -82,7 +82,7 @@
     <string name="connecting_to_rfid_reader">Connecting to RFID reader</string>
     <string name="rfid_reader_disappeared">RFID reader disappeared</string>
     <string name="disconnecting_reader">Disconnecting reader</string>
-    <string name="asset_rfid_tracking">Asset RFID Tracking</string>
+    <string name="asset_rfid_tracking">Asset Tracking RFID</string>
     <string name="bluetooth_disabled">Bluetooth is not enabled. Enable it to connect to RFID</string>
     <string name="bluetooth_turned_off">Bluetooth is turned off. You need to enabled it</string>
     <string name="confirm">Confirm</string>

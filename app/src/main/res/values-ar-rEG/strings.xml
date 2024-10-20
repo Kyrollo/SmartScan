@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Smart Scan</string>
+    <string name="app_name">Asset Tracking RFID</string>
     <string name="ibex_solutions">IBEX Solutions</string>
     <string name="session_name">اسم الجلسة:</string>
     <string name="start_date">تاريخ البدء:</string>

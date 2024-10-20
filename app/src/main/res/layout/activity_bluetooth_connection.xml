@@ -22,7 +22,7 @@
         android:id="@+id/pageTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="8dp"
         android:text="@string/bluetooth_connection"
         android:textSize="30sp"
         android:textColor="@color/pageName"
@@ -52,24 +52,25 @@
         android:id="@+id/textViewStatusRFID"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="25sp"
-        android:textColor="@color/white"
-        android:text=""
+        android:layout_marginTop="8dp"
         android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/textrfid"
+        android:padding="5dp"
+        android:text=""
+        android:textColor="@color/white"
+        android:textSize="25sp"
+        app:layout_constraintEnd_toStartOf="@+id/refreshConnection"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@id/textrfid" />
 
     <ImageView
         android:id="@+id/refreshConnection"
-        android:layout_width="196px"
-        android:layout_height="200px"
-        android:layout_marginTop="20dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
         android:importantForAccessibility="no"
         android:src="@drawable/ic_refresh"
-        app:layout_constraintTop_toBottomOf="@id/textViewStatusRFID"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textrfid" />
 
     <FrameLayout
         android:id="@+id/progressBarContainer"
