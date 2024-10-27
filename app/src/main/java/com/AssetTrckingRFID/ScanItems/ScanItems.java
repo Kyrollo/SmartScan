@@ -99,8 +99,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     private void addMissing() {
 
-        List<Inventory> checkIfLocationInsertedBefore =
-                App.get().getDB().inventoryDao().getAllInLocation(locationID);
+        List<Inventory> checkIfLocationInsertedBefore = new ArrayList<>(App.get().getDB().inventoryDao().getAllInLocation(locationID));
 
         allTagsList = new ArrayList<>();
         unregistredInventoryList = new ArrayList<>();
@@ -284,6 +283,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         registeredCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getRegistered(locationID).size()));
         missingCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true).size()));
         unregisteredCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getUnRegistered(locationID).size()));
+
     }
 
     private void changeItemInventoryStatus(String tagId) {

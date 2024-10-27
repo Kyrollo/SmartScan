@@ -84,6 +84,13 @@ public class AssignTags extends AppCompatActivity implements BluetoothHandler.RF
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        rfidHandler.onDestroy();
+        finish();
+    }
+
     public void showProgressBar() {
         progressBarContainer.setVisibility(View.VISIBLE);
     }
@@ -224,8 +231,15 @@ public class AssignTags extends AppCompatActivity implements BluetoothHandler.RF
 
                 rfidTextView.setText("");
                 barcodeEditText.setText("");
+                rfidTextView.requestFocus();
+
                 // Toast.makeText(this, getString(R.string.invalid_opt3), Toast.LENGTH_SHORT).show();
                 // return;
+            }
+            else
+            {
+                Toast.makeText(this, getString(R.string.rfid_tag_is_already_assigned), Toast.LENGTH_SHORT).show();
+                barcodeEditText.setText("");
             }
 
 
@@ -283,7 +297,9 @@ public class AssignTags extends AppCompatActivity implements BluetoothHandler.RF
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+
                         rfidTextView.setText(finalTagId);
+                        barcodeEditText.requestFocus();
                     }
                 });
             }
