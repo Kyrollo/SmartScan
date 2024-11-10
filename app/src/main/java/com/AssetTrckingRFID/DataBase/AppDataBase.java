@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import com.AssetTrckingRFID.Dao.*;
 import com.AssetTrckingRFID.Tables.*;
 
-@Database(entities = {Item.class, Users.class, Location.class, Category.class, Status.class, InventoryH.class, Inventory.class}, exportSchema = false,version = 9)
+@Database(entities = {Item.class, Users.class, Location.class, Category.class, Status.class, InventoryH.class, Inventory.class}, exportSchema = false,version = 10)
 public abstract class AppDataBase extends RoomDatabase {
     public abstract ItemDao itemDao();
     public abstract UsersDao usersDao();

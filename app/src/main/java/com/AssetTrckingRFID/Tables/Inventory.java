@@ -106,7 +106,6 @@ public class Inventory {
     @ColumnInfo(name = "reason_id")
     public int ReasonID;
 
-
     @ColumnInfo(name = "tag_id")
     public String TagId;
 
@@ -462,6 +461,14 @@ public class Inventory {
 
     public void setReasonID(int reasonID) {
         ReasonID = reasonID;
+    }
+
+    public String getTagId() {
+        return TagId;
+    }
+
+    public void setTagId(String tagId) {
+        TagId = tagId;
     }
 
     public Bitmap getImage() {

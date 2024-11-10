@@ -283,6 +283,12 @@ public class RFIDHandlerItems implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     }
 
     private void ConfigureReader() {
+        if (reader == null) {
+            // Initialize the RFIDReader object here
+            reader = new RFIDReader();
+            // Additional initialization code if needed
+        }
+
         if (reader.isConnected()) {
             TriggerInfo triggerInfo = new TriggerInfo();
             triggerInfo.StartTrigger.setTriggerType(START_TRIGGER_TYPE.START_TRIGGER_TYPE_IMMEDIATE);

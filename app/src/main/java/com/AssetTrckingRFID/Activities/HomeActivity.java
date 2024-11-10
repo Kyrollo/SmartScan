@@ -37,6 +37,7 @@ import com.AssetTrckingRFID.API.Retrofit;
 import com.AssetTrckingRFID.API.UploadInventory;
 import com.AssetTrckingRFID.API.UploadItems;
 import com.AssetTrckingRFID.ApiClasses.*;
+import java.util.concurrent.CountDownLatch;
 
 import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.Assign.AssignTags;
@@ -195,7 +196,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         intent.putExtra("USERNAME", username);
         intent.putExtra("PASSWORD", userId);
         startActivity(intent);
-      //  finish();
+        finish();
     }
 
     private void fetchItems() {
@@ -372,50 +373,36 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             App.get().getDB().usersDao().insertAll(users);
         }
     }
+
     private void testConnection(Runnable onSuccess) {
+        if (!NetworkUtils.isNetworkConnected(this)) {
+            Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_LONG).show();
+            return;
+        }
         apiService.testConnection().enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
                 if (response.isSuccessful() && "Success".equals(response.body())) {
-                   // isTested = true;
                     onSuccess.run();
                     Toast.makeText(getApplicationContext(), getString(R.string.connection_succeeded), Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
                 }
-
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
-
             }
         });
     }
 
-    private boolean checkConnection()
-    {
-        if (!NetworkUtils.isNetworkConnected(this)) {
-
-            return true;
-        }
-        return false;
-    }
     private void downloadData(){
-        if(checkConnection())
-        {
-            testConnection(this::getItems);
-        }
-        else
-        {
-            Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_LONG).show();
-        }
+//        if (!NetworkUtils.isNetworkConnected(this)) {
+//            Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_LONG).show();
+//            return;
+//        }
 
-    }
-
-    private void getItems()
-    {
         List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
 
         if (allInventory.size() == 0){
@@ -425,6 +412,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             showDownloadDialog();
         }
     }
+
     private void showDownloadDialog() {
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.downloadDataDialog))
@@ -670,7 +658,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_download) {
-            downloadData();
+            testConnection(this::downloadData);
+//            downloadData();
         }
         else if (id == R.id.nav_upload) {
             uploadData();
@@ -700,10 +689,9 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
-    @SuppressLint("MissingSuperCall")
     @Override
     public void onBackPressed() {
-        //super.onBackPressed();
+        super.onBackPressed();
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START);
         } else {
@@ -720,15 +708,3 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 }
-    // Card view delete all (Done)
-    // Make sure array of bytes saved in the database (Done)
-    // Save validation pictures in path (Done)
-
-
-    // Bluetooth connection general (work)
-    // Scan Barcode when connect to RFID (يارب فك الضيقة)
-
-    // Upload array of bytes to the server (Dao and api) (pending)
-
-    // Notes:
-    // Inventory item barcode = OPT3, need to add opt3 variable

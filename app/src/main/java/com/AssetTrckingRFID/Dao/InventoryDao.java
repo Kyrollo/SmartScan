@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import com.AssetTrckingRFID.Tables.Inventory;
+import com.AssetTrckingRFID.Tables.Item;
 
 import java.util.List;
 
@@ -41,8 +42,28 @@ public interface InventoryDao {
     @Query("UPDATE inventory SET missing = false, registered = true, scanned = true, checked = true, manual= false WHERE item_barcode = :itemBarcode")
     void updateItemStatusToFound(String itemBarcode);
 
-    @Query("SELECT * FROM inventory WHERE location_id = :LocationId")
-    List<Inventory> getAllInventoriesByLocationId(String LocationId);
+    @Query("UPDATE inventory SET missing = false, registered = false, scanned = true, checked = true, manual= false, reallocated= true, location_id= :newLocationID, old_location_id= :oldlocationID  WHERE item_barcode = :itemBarcode")
+    void updateItemMissingFound(String itemBarcode, String oldlocationID, String newLocationID);
+
+    @Query("SELECT * FROM inventory WHERE location_id = :LocationId AND tag_id IS NOT NULL And missing = true")
+    List<Inventory> getAllUMissingTagsID(String LocationId);
+
+    @Query("SELECT * FROM inventory WHERE location_id = :LocationId  AND tag_id IS NOT NULL AND reallocated = true")
+    List<Inventory> getAllUnregisteredTagsID(String LocationId);
+
+    @Query("SELECT * FROM inventory WHERE location_id = :locationID AND tag_id IS NOT NULL AND registered = true")
+    List<Inventory> getAllURegisteredTagsID(String locationID);
+
+    @Query("SELECT * FROM inventory WHERE location_id != :LocationId AND tag_id IS NOT NULL")
+    List<Inventory> getAllOtherLocationTagsID(String LocationId);
+
+    @Query("SELECT * FROM inventory WHERE location_id = :locationID AND tag_id IS NOT NULL")
+    List<Inventory> getAllTagsIDByLocationId(String locationID);
+
+    @Query("SELECT * FROM inventory WHERE  tag_id IS NOT NULL")
+    List<Inventory> getAllTagsID();
+
+
 
     @Query("UPDATE inventory SET image_data = :imageData WHERE item_barcode = :barcode")
     void updateItemImage(byte[] imageData, String barcode);
@@ -55,5 +76,6 @@ public interface InventoryDao {
 
     @Query("SELECT * FROM Inventory where location_id = :locationID")
     List<Inventory> getAllInLocation(String locationID);
+
 
 }
