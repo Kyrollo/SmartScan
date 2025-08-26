@@ -62,8 +62,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (validateUser(username, password)) {
             userId = App.get().getDB().usersDao().getUserByUsernameAndPassword(username, password).getUserID();
+//            userId = 1;
             Intent intent = new Intent(MainActivity.this, HomeActivity.class);
             intent.putExtra("USERNAME", " " + username);
+//            intent.putExtra("USERNAME", " " + "admin");
             intent.putExtra("USERID", userId);
             startActivity(intent);
        //     finish();
@@ -74,6 +76,9 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean validateUser(String username, String password) {
         Users user = App.get().getDB().usersDao().getUserByUsernameAndPassword(username, password);
+//        Users user = new Users();
+//        user.setUserName("admin");
+//        user.setPassword("123");
         return user != null;
     }
 

@@ -220,10 +220,24 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         });
     }
 
+    private String cleanOpt3(String opt3) {
+        if (opt3 == null) return null;
+        return opt3.replace("\r", "").replace("\n", "").trim();
+    }
+
     private void insertItems(List<ItemResponse> items) {
         for (ItemResponse item : items) {
-            Item newItem = new Item(item.getItemBarCode(), item.getItemDesc(), item.getRemark(), item.getOPT3(),
-                    item.getItemID(), item.getCategoryID(), item.getLocationID(), item.getStatusID(), item.getItemSN());
+            String opt3Clean = cleanOpt3(item.getOPT3());
+            Item newItem = new Item(item.getItemBarCode(),
+                    item.getItemDesc(),
+                    item.getRemark(),
+//                    item.getOPT3(),
+                    opt3Clean,
+                    item.getItemID(),
+                    item.getCategoryID(),
+                    item.getLocationID(),
+                    item.getStatusID(),
+                    item.getItemSN());
             App.get().getDB().itemDao().insert(newItem);
         }
         updateProgress();

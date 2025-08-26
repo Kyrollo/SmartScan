@@ -6,7 +6,7 @@
                 android:startColor="@color/linkColor"
                 android:centerColor="@color/edittextStroke"
                 android:endColor="@color/pageName"
-                android:angle="240"/>
+                android:angle="270"/>
         </shape>
     </item>
 </selector>

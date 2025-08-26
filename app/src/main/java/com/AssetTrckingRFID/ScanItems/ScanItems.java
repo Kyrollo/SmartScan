@@ -15,7 +15,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
@@ -33,9 +32,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.AssetTrckingRFID.Adapters.InventoryAdapter;
-import com.AssetTrckingRFID.Adapters.ItemAdapter;
 import com.AssetTrckingRFID.App;
-
 import com.AssetTrckingRFID.Bluetooth.BluetoothHandler;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.Tables.Category;
@@ -57,33 +54,46 @@ import java.util.Map;
 import java.util.Set;
 
 public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFIDHandlerBluetoothListener {
+
+    // UI
     private RecyclerView recyclerView;
-    private ItemAdapter itemAdapter;
     private InventoryAdapter inventoryAdapter;
-    private List<Inventory>  allTagsList,unregistredInventoryList;      //,inventoryList, , missingInventoryList, unregistredInventoryList, AllInventoryList;
-//    private List<Item> registeredItemsList, unregisteredItemsList, missingItemsList, allItemsList;
-    private Set<String> uniqueTagIDs = new HashSet<>();
-    private Set<String> unregisteredTags = new HashSet<>();
-//    private RFIDHandlerItems rfidHandler;
+    private TextView allCountData, registeredCountData, unregisteredCountData, missingCountData;
+    private TabLayout tabLayout;
+    private Button btnEnd;
+    private FrameLayout progressBarLayout;
+
+    // RFID
     private BluetoothHandler rfidHandler;
+    private BluetoothAdapter bluetoothAdapter;
+
+    // Navigation data
+    public String locationID, startDateStr;
+    public int userId, inventoryId;
+
+    // In-memory fast structures
+    private final Set<String> registeredTagIds = new HashSet<>();
+    private final Set<String> unregisteredTagIds = new HashSet<>();
+    private final Set<String> missingTagIds = new HashSet<>();
+    private final Set<String> otherLocationTagIds = new HashSet<>();
+    private final Map<String, Inventory> tagIdToInventory = new HashMap<>();
+
+    // Scan duplicated Tags ID
+    private final Set<String> uniqueTagIDs = new HashSet<>();
+
+    // Pending DB changes (Updated on End)
+    private final Set<String> pendingFoundBarcodes = new HashSet<>();
+    private final Map<String, String> pendingRelocationOldLocationByBarcode = new HashMap<>();
+
+    // Adapter initial list holder
+    private final List<Inventory> emptyListForAdapter = new ArrayList<>();
+
     private Inventory randomInventory;
-    TextView allCountData, registeredCountData, unregisteredCountData, missingCountData;
+
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_WRITE_STORAGE = 300;
-    public String locationID, startDateStr;
-    public int userId, inventoryId;
-    private TabLayout tabLayout;
-    private Button btnEnd;
-    private FrameLayout progressBarLayout;
-    private BluetoothAdapter bluetoothAdapter;
-    private List<Inventory> allScannedTags = new ArrayList<>();                 //  All tags that are scanned
-    private List<Inventory> registeredFetchedTags = new ArrayList<>();          //  Tags that are scanned in the current location or other location
-    private List<Inventory> unregisteredFetchedTags = new ArrayList<>();        //  Tags that are scanned not in the current location
-    private List<Inventory> missingFetchedTags = new ArrayList<>();             //  Tags that are not scanned in the current location
-    private List<Inventory> otherLocationTagId = new ArrayList<>();             //  Tags that are not scanned in other locations
-    private Map<String, Inventory> missingFetchedTagsMap = new HashMap<>(), otherLocationTagIdMap = new HashMap<>();
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -91,108 +101,94 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan_items);
 
-//        rfidHandler = new RFIDHandlerItems();
         rfidHandler = new BluetoothHandler();
 
         retrieveData();
         initializePage();
         buildRecyclerView();
+
         addMissing();
+
         initializeRfid();
         initializeTabs();
         buttonEnd();
-        fetchDataFromDatabase();
-        initializeHashMaps();
-
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
-//        }
     }
 
-    private void addMissing() {
-        List<Inventory> checkIfLocationInsertedBefore = new ArrayList<>(App.get().getDB().inventoryDao().getAllInLocation(locationID));
+    private void addMissing() { new AddMissingTask().execute(); }
 
-        allTagsList = new ArrayList<>();
-        unregistredInventoryList = new ArrayList<>();
-//        if (inventoryList == null) {
-//            inventoryList = new ArrayList<>();
-//        }
-//        if (registredInventoryList == null) {
-//            registredInventoryList = new ArrayList<>();
-//        }
-//        if (missingInventoryList == null) {
-//            missingInventoryList = new ArrayList<>();
-//        }
-//
-        try
-        {
-//        if (checkIfLocationInsertedBefore.size() == 0) {
-//            List<Item> itemList = App.get().getDB().itemDao().getAllItemsByParentID(locationID);
-//            for (Item item : itemList) {
-//                Category categoryDesc = App.get().getDB().categoryDao().getCategoryByID(item.getCategoryID());
-//                Location loc = App.get().getDB().locationDao().getAllLocationByLocationID(item.getLocationID());
-//                Inventory inventory = new Inventory(inventoryId, startDateStr, userId, item.getItemID(), item.getItemBarCode(), item.getOpt3(),
-//                        item.getRemark(), item.getCategoryID(), categoryDesc.getCategoryDesc(), item.getStatusID(), locationID,
-//                        loc.getLocationDesc(), loc.getFullLocationDesc());
-//                App.get().getDB().inventoryDao().insert(inventory);
-//            }
+    private class AddMissingTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() { showProgressBar(); }
 
-        if (checkIfLocationInsertedBefore.size() == 0) {
-            List<Item> itemList = App.get().getDB().itemDao().getAllItems();
-            for (Item item : itemList) {
-                Category categoryDesc = App.get().getDB().categoryDao().getCategoryByID(item.getCategoryID());
-                Location loc = App.get().getDB().locationDao().getAllLocationByLocationID(item.getLocationID());
-                Inventory inventory = new Inventory(inventoryId, startDateStr, userId, item.getItemID(), item.getItemBarCode(), item.getOpt3(),
-                        item.getRemark(), item.getCategoryID(), categoryDesc.getCategoryDesc(), item.getStatusID(), item.getLocationID(),
-                        loc.getLocationDesc(), loc.getFullLocationDesc());
-                App.get().getDB().inventoryDao().insert(inventory);
+        @Override
+        protected Void doInBackground(Void... voids) {
+            try {
+                List<Inventory> existing = App.get().getDB().inventoryDao().getAllInLocation(locationID);
+                if (existing == null || existing.isEmpty()) {
+                    List<Item> itemList = App.get().getDB().itemDao().getAllItems();
+
+                    App.get().getDB().runInTransaction(() -> {
+
+                        for (Item item : itemList) {
+                            Category categoryDesc = App.get().getDB().categoryDao().getCategoryByID(item.getCategoryID());
+                            Location loc = App.get().getDB().locationDao().getAllLocationByLocationID(item.getLocationID());
+
+                            Inventory inventory = new Inventory(
+                                    inventoryId,
+                                    startDateStr,
+                                    userId,
+                                    item.getItemID(),
+                                    item.getItemBarCode(),
+                                    item.getOpt3(),
+                                    item.getRemark(),
+                                    item.getCategoryID(),
+                                    categoryDesc != null ? categoryDesc.getCategoryDesc() : null,
+                                    item.getStatusID(),
+                                    item.getLocationID(),
+                                    loc != null ? loc.getLocationDesc() : null,
+                                    loc != null ? loc.getFullLocationDesc() : null
+                            );
+
+                            App.get().getDB().inventoryDao().insert(inventory);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            return null;
         }
-//
-//            inventoryList = App.get().getDB().inventoryDao().getAllInventoriesByLocationId(locationID);
-//            registredInventoryList = App.get().getDB().inventoryDao().getRegistered(locationID);
-//            missingInventoryList = App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true);
-        }
-        catch(Exception e)
-        {
-            e.printStackTrace();
-        }
-//
-//        allItemsList = new ArrayList<>();
 
-        // Open the missing tab by default
-        openTab(2);
-        missingTrx();
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            fetchDataFromDatabase();
+            hideProgressBar();
 
-        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        registerReceiver(bluetoothStateReceiver, filter);
+            // Default to Missing tab
+            openTab(2);
+            missingTrx();
+
+            // Register Bluetooth state listener
+            IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(bluetoothStateReceiver, filter);
+        }
     }
 
     private void buildRecyclerView() {
-//        itemAdapter = new ItemAdapter(allItemsList);
-        inventoryAdapter = new InventoryAdapter(allScannedTags);
+        inventoryAdapter = new InventoryAdapter(emptyListForAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
-//        recyclerView.setAdapter(itemAdapter);
         recyclerView.setAdapter(inventoryAdapter);
     }
 
-    public void showProgressBar() {
-        progressBarLayout.setVisibility(View.VISIBLE);
-    }
+    public void showProgressBar() { progressBarLayout.setVisibility(View.VISIBLE); }
 
-    public void hideProgressBar() {
-        progressBarLayout.setVisibility(View.GONE);
-    }
+    public void hideProgressBar() { progressBarLayout.setVisibility(View.GONE); }
 
     private void buttonEnd() {
-        btnEnd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //showValidationDialog();
-                rfidHandler.onDestroy();
-                finish();
-            }
+        btnEnd.setOnClickListener(v -> {
+            rfidHandler.onDestroy();
+            new FlushPendingUpdatesTask(this::finish).execute();
         });
     }
 
@@ -215,19 +211,14 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
             } else {
-//                rfidHandler.onCreate(this);
-                //            rfidHandler.onDestroy();
                 rfidHandler.onCreate(this);
             }
         } else {
-//          rfidHandler.onCreate(this);
-//            rfidHandler.onDestroy();
             rfidHandler.onCreate(this);
         }
     }
 
     private void initializePage() {
-
         recyclerView = findViewById(R.id.recyclerViewItems);
         tabLayout = findViewById(R.id.tabLayout);
         allCountData = findViewById(R.id.allCountData);
@@ -236,316 +227,243 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         unregisteredCountData = findViewById(R.id.unregisteredCountData);
         btnEnd = findViewById(R.id.btnEnd);
         progressBarLayout = findViewById(R.id.progressBarLayout);
-
         recyclerView.setVisibility(View.VISIBLE);
     }
 
     private void initializeTabs() {
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
+            @Override public void onTabSelected(TabLayout.Tab tab) {
                 switch (tab.getPosition()) {
-                    case 0:
-                        allTrx();
-                        break;
-                    case 1:
-                        registeredTrx();
-                        break;
-                    case 2:
-                        missingTrx();
-                        break;
-                    case 3:
-                        unRegisteredTrx();
-                        break;
+                    case 0: allTrx(); break;
+                    case 1: registeredTrx(); break;
+                    case 2: missingTrx(); break;
+                    case 3: unRegisteredTrx(); break;
                 }
             }
-
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-                // Do nothing
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-                // Do nothing
-            }
+            @Override public void onTabUnselected(TabLayout.Tab tab) {}
+            @Override public void onTabReselected(TabLayout.Tab tab) {}
         });
     }
 
     private void openTab(int tabPosition) {
         TabLayout.Tab tab = tabLayout.getTabAt(tabPosition);
-        if (tab != null) {
-            tab.select();
-        }
+        if (tab != null) tab.select();
     }
 
-    // Fetch data from the data base and add it to this lists,
-    // and do operation on it instead of fetching from the database every time
-    private void fetchDataFromDatabase() {
-        new FetchDataFromDatabaseTask().execute();
-    }
-
-    private void initializeHashMaps() {
-        new InitializeHashMapsTask().execute();
-    }
+    private void fetchDataFromDatabase() { new FetchDataFromDatabaseTask().execute(); }
 
     private class FetchDataFromDatabaseTask extends AsyncTask<Void, Void, Void> {
         @Override
+        protected void onPreExecute() { showProgressBar(); }
+
+        @Override
         protected Void doInBackground(Void... voids) {
-            otherLocationTagId = App.get().getDB().inventoryDao().getAllOtherLocationTagsID(locationID);
-            missingFetchedTags = App.get().getDB().inventoryDao().getAllUMissingTagsID(locationID);
-            registeredFetchedTags = App.get().getDB().inventoryDao().getAllURegisteredTagsID(locationID);
-            unregisteredFetchedTags = App.get().getDB().inventoryDao().getAllUnregisteredTagsID(locationID);
+            registeredTagIds.clear();
+            unregisteredTagIds.clear();
+            missingTagIds.clear();
+            otherLocationTagIds.clear();
+            tagIdToInventory.clear();
+
+            List<Inventory> otherLoc = App.get().getDB().inventoryDao().getAllOtherLocationTagsID(locationID);
+            List<Inventory> missing = App.get().getDB().inventoryDao().getAllUMissingTagsID(locationID);
+            List<Inventory> registered = App.get().getDB().inventoryDao().getAllURegisteredTagsID(locationID);
+            List<Inventory> unregistered = App.get().getDB().inventoryDao().getAllUnregisteredTagsID(locationID);
+
+            for (Inventory inv : registered) {
+                String tag = inv.getTagId();
+                if (tag != null && !tag.isEmpty()) {
+                    registeredTagIds.add(tag);
+                    tagIdToInventory.put(tag, inv);
+                }
+            }
+
+            for (Inventory inv : unregistered) {
+                String tag = inv.getTagId();
+                if (tag != null && !tag.isEmpty()) {
+                    unregisteredTagIds.add(tag);
+                    tagIdToInventory.put(tag, inv);
+                }
+            }
+
+            for (Inventory inv : missing) {
+                String tag = inv.getTagId();
+                if (tag != null && !tag.isEmpty()) {
+                    missingTagIds.add(tag);
+                    tagIdToInventory.put(tag, inv);
+                }
+            }
+
+            for (Inventory inv : otherLoc) {
+                String tag = inv.getTagId();
+                if (tag != null && !tag.isEmpty()) {
+                    otherLocationTagIds.add(tag);
+                    tagIdToInventory.put(tag, inv);
+                }
+            }
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            initializeHashMaps();
+            hideProgressBar();
+            updateCountTextViews();
+
+            int pos = tabLayout.getSelectedTabPosition();
+            if (pos == 0) allTrx();
+            else if (pos == 1) registeredTrx();
+            else if (pos == 2) missingTrx();
+            else if (pos == 3) unRegisteredTrx();
         }
     }
 
-    private class InitializeHashMapsTask extends AsyncTask<Void, Void, Void> {
+    // Flush DB updates when End is pressed
+    private interface FlushCallback { void onDone(); }
+
+    private class FlushPendingUpdatesTask extends AsyncTask<Void, Void, Void> {
+        private final FlushCallback callback;
+        FlushPendingUpdatesTask(FlushCallback cb) { this.callback = cb; }
+
+        @Override
+        protected void onPreExecute() { showProgressBar(); }
+
         @Override
         protected Void doInBackground(Void... voids) {
-            for (Inventory item : missingFetchedTags) {
-                if (item.getTagId() != null) {
-                    missingFetchedTagsMap.put(item.getTagId(), item);
-                }
-            }
+            try {
 
-            for (Inventory item : otherLocationTagId) {
-                if (item.getTagId() != null) {
-                    otherLocationTagIdMap.put(item.getTagId(), item);
+                // Found items
+                for (String barcode : new HashSet<>(pendingFoundBarcodes)) {
+                    App.get().getDB().inventoryDao().updateItemStatusToFound(barcode);
                 }
+
+                // Relocated items (old -> current locationID)
+                for (Map.Entry<String, String> e : new HashMap<>(pendingRelocationOldLocationByBarcode).entrySet()) {
+                    App.get().getDB().inventoryDao().updateItemMissingFound(e.getKey(), e.getValue(), locationID);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            // Any UI updates if needed
+            pendingFoundBarcodes.clear();
+            pendingRelocationOldLocationByBarcode.clear();
+            hideProgressBar();
+            if (callback != null) callback.onDone();
         }
     }
 
-    private class UpdateItemStatusTask extends AsyncTask<String, Void, Void> {
-        @Override
-        protected Void doInBackground(String... params) {
-            String itemBarcode = params[0];
-            App.get().getDB().inventoryDao().updateItemStatusToFound(itemBarcode);
-            return null;
-        }
-    }
+    // Scan logic: move within sets only (no DB writes)
+    public interface CheckItemCallback { void onCheckComplete(boolean result); }
 
-    private void updateItemStatusToFound(String itemBarcode) {
-        new UpdateItemStatusTask().execute(itemBarcode);
-    }
+    private void DoInventory(String tagIdRaw) {
+        final String tagId = tagIdRaw;
+        if (tagId == null || tagId.isEmpty()) return;
 
-    private class updateItemMissingTask extends AsyncTask<String, Void, Void> {
-        @Override
-        protected Void doInBackground(String... params) {
-            String itemBarcode = params[0];
-            String oldLocationID = params[1];
-            String newLocationID = params[2];
-            App.get().getDB().inventoryDao().updateItemMissingFound(itemBarcode, oldLocationID, newLocationID);
-            return null;
-        }
-    }
-
-    private void updateItemMissing(String itemBarcode, String locationID, String id) {
-        new updateItemMissingTask().execute(itemBarcode, locationID, id);
-    }
-
-    private class CheckIfItemIsMissingTask extends AsyncTask<String, Void, Boolean> {
-        private CheckItemCallback callback;
-
-        public CheckIfItemIsMissingTask(CheckItemCallback callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String tagId = params[0];
-            Inventory item = missingFetchedTagsMap.get(tagId);
-            if (item != null) {
-                missingFetchedTags.remove(item);
-                registeredFetchedTags.add(item);
-                updateItemStatusToFound(item.getItemBarcode());
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean result) {
-            if (callback != null) {
-                callback.onCheckComplete(result);
-            }
-        }
-    }
-
-    private class CheckIfItemIsOnOtherLocationTask extends AsyncTask<String, Void, Boolean> {
-        private CheckItemCallback callback;
-
-        public CheckIfItemIsOnOtherLocationTask(CheckItemCallback callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            String tagId = params[0];
-            Inventory item = otherLocationTagIdMap.get(tagId);
-            if (item != null) {
-                otherLocationTagId.remove(item);
-                unregisteredFetchedTags.add(item);
-                updateItemMissing(item.getItemBarcode(), item.getLocationID(), locationID);
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean result) {
-            if (callback != null) {
-                callback.onCheckComplete(result);
-            }
-        }
-    }
-
-    private void checkIfItemIsMissing(String tagId, CheckItemCallback callback) {
-        new CheckIfItemIsMissingTask(callback).execute(tagId);
-    }
-
-    private void checkIfItemIsOnOtherLocation(String tagId, CheckItemCallback callback) {
-        new CheckIfItemIsOnOtherLocationTask(callback).execute(tagId);
-    }
-
-    private void DoInventory(String tagId) {
-        checkIfItemIsMissing(tagId, result -> {
-            if (!result) {
-                checkIfItemIsOnOtherLocation(tagId, result2 -> {
-                    if (!result2) {
-//                        runOnUiThread(() -> Toast.makeText(this, getString(R.string.invalid_rfid), Toast.LENGTH_SHORT).show());
-                    }
+        checkIfItemIsMissing(tagId, foundInMissing -> {
+            if (!foundInMissing) {
+                checkIfItemIsOnOtherLocation(tagId, foundInOtherLoc -> {
+                    // If needed, handle unknown tags here
                 });
             }
         });
     }
 
-//    private void updateRecyclerView(List<Inventory> invlist, List<Item> itemList) {
-//        if (invlist == null) {
-//            invlist = new ArrayList<>();
-//        }
-//        if (itemList == null) {
-//            itemList = new ArrayList<>();
-//        }
-//
-//        List<Inventory> invlistCopy = new ArrayList<>(invlist);
-//
-//        for (Inventory inventory : invlistCopy) {
-//            if (inventory != null) {
-//                Item item = App.get().getDB().itemDao().getItemsByItemID(inventory.getItemID());
-//                if (item != null) {
-//                    itemList.add(item);
-//                }
-//            }
-//        }
-//
-//        itemAdapter.updateData(itemList);
-//       // updateCountTextViews();
-//    }
+    private void checkIfItemIsMissing(String tagId, CheckItemCallback callback) { new CheckIfItemIsMissingTask(callback).execute(tagId); }
+
+    private class CheckIfItemIsMissingTask extends AsyncTask<String, Void, Boolean> {
+        private final CheckItemCallback callback;
+        CheckIfItemIsMissingTask(CheckItemCallback callback) { this.callback = callback; }
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            String tagId = params[0];
+            if (tagId != null && missingTagIds.remove(tagId)) {
+                registeredTagIds.add(tagId);
+                Inventory inv = tagIdToInventory.get(tagId);
+                if (inv != null && inv.getItemBarcode() != null) {
+                    pendingFoundBarcodes.add(inv.getItemBarcode());
+                }
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) { if (callback != null) callback.onCheckComplete(result); }
+    }
+
+    private void checkIfItemIsOnOtherLocation(String tagId, CheckItemCallback callback) { new CheckIfItemIsOnOtherLocationTask(callback).execute(tagId); }
+
+    private class CheckIfItemIsOnOtherLocationTask extends AsyncTask<String, Void, Boolean> {
+        private final CheckItemCallback callback;
+        CheckIfItemIsOnOtherLocationTask(CheckItemCallback callback) { this.callback = callback; }
+
+        @Override
+        protected Boolean doInBackground(String... params) {
+            String tagId = params[0];
+            if (tagId != null && otherLocationTagIds.remove(tagId)) {
+                unregisteredTagIds.add(tagId);
+                Inventory inv = tagIdToInventory.get(tagId);
+                if (inv != null && inv.getItemBarcode() != null) {
+                    pendingRelocationOldLocationByBarcode.put(inv.getItemBarcode(), inv.getLocationID());
+                }
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {if (callback != null) callback.onCheckComplete(result); }
+    }
+
+    // Rendering
+    private void registeredTrx() { new RenderSetTask(registeredTagIds).execute(); }
+    private void unRegisteredTrx() { new RenderSetTask(unregisteredTagIds).execute(); }
+    private void missingTrx() { new RenderSetTask(missingTagIds).execute(); }
+    private void allTrx() {
+        Set<String> all = new HashSet<>(registeredTagIds);
+        all.addAll(unregisteredTagIds);
+        new RenderSetTask(all).execute();
+    }
+
+    private class RenderSetTask extends AsyncTask<Void, Void, List<Inventory>> {
+        private final Set<String> source;
+        RenderSetTask(Set<String> source) { this.source = source; }
+
+        @Override
+        protected List<Inventory> doInBackground(Void... voids) {
+            List<Inventory> out = new ArrayList<>(source.size());
+            for (String tag : source) {
+                Inventory inv = tagIdToInventory.get(tag);
+                if (inv != null) out.add(inv);
+            }
+            return out;
+        }
+
+        @Override
+        protected void onPostExecute(List<Inventory> result) {
+            inventoryAdapter.updateData(result);
+            updateCountTextViews();
+        }
+    }
 
     @SuppressLint("SetTextI18n")
     private void updateCountTextViews() {
-//        allCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getAll(locationID).size()));
-//        registeredCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getRegistered(locationID).size()));
-//        missingCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true).size()));
-//        unregisteredCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getUnRegistered(locationID).size()));
+        int registeredCount = registeredTagIds.size();
+        int unregisteredCount = unregisteredTagIds.size();
+        int missingCount = missingTagIds.size();
+        int allCount = registeredCount + unregisteredCount;
 
-        allCountData.setText(String.valueOf(registeredFetchedTags.size() + unregisteredFetchedTags.size()));
-//        allCountData.setText(String.valueOf(allScannedTags.size()));
-        registeredCountData.setText(String.valueOf(registeredFetchedTags.size()));
-        missingCountData.setText(String.valueOf(missingFetchedTags.size()));
-        unregisteredCountData.setText(String.valueOf(unregisteredFetchedTags.size()));
-
+        allCountData.setText(String.valueOf(allCount));
+        registeredCountData.setText(String.valueOf(registeredCount));
+        missingCountData.setText(String.valueOf(missingCount));
+        unregisteredCountData.setText(String.valueOf(unregisteredCount));
     }
 
-//    private void changeItemInventoryStatus(String tagId) {
-//        if (!isItemInInventory(tagId)) {
-//            runOnUiThread(() -> {
-//                addUnregisteredItem(tagId);
-//            });
-////            addUnregisteredItem(tagId);
-//
-//            // Open the unregistered tab
-//            runOnUiThread(() -> openTab(3));
-//            //return;
-//        }
-//        else {
-//            AtomicReference<Inventory> inventory = new AtomicReference<>(new Inventory());
-//            runOnUiThread(() -> {
-//                inventory.set(App.get().getDB().inventoryDao().getInventoryByOPT3(tagId));
-//            });
-////            Inventory inventory = App.get().getDB().inventoryDao().getInventoryByOPT3(tagId);
-//            if (inventory.get() != null && inventory.get().isMissing()) {
-//                runOnUiThread(() -> {
-//                    App.get().getDB().inventoryDao().updateItemStatusToFound(inventory.get().getItemBarcode());
-//                });
-////                App.get().getDB().inventoryDao().updateItemStatusToFound(inventory.getItemBarcode());
-//
-////                missingInventoryList = App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true);
-////                registredInventoryList.add(inventory);
-//            }
-//            // Open the registered tab
-//            runOnUiThread(() -> openTab(1));
-//        }
-//    }
-//
-//    private boolean isItemInInventory(String tagId) {
-//        return App.get().getDB().inventoryDao().getInventoryByOPT3AndLocationID(tagId, locationID) != null;
-//    }
-//
-//    private void addUnregisteredItem(String tagId) {
-//        unregisteredTags.add(tagId);
-//        Inventory unregisteredInventory = App.get().getDB().inventoryDao().getInventoryByOPT3(tagId);
-//        if (unregisteredInventory == null) {
-//            getItemAndAddToInventory(tagId);
-//            Inventory newInsertedInventory = App.get().getDB().inventoryDao().getInventoryByOPT3(tagId);
-//
-//            if (newInsertedInventory != null){
-//                unregistredInventoryList.add(newInsertedInventory);
-//            } else {
-//                runOnUiThread(() -> Toast.makeText(this, getString(R.string.invalid_rfid), Toast.LENGTH_SHORT).show());
-//            }
-//        } else {
-//            unregistredInventoryList.add(unregisteredInventory);
-//           // unRegisteredTrx();
-//        }
-//    }
-//
-//    private void getItemAndAddToInventory(String tagId) {
-//        Item item = App.get().getDB().itemDao().getItemsByOPT3(tagId);
-//        if (item != null) {
-//            Category categoryDesc = App.get().getDB().categoryDao().getCategoryByID(item.getCategoryID());
-//            Location NewLoc = App.get().getDB().locationDao().getAllLocationByLocationID(locationID);
-//            Location OldLoc = App.get().getDB().locationDao().getAllLocationByLocationID(item.getLocationID());
-//
-//            Inventory inventory = new Inventory(inventoryId, startDateStr, userId, item.getItemID(), item.getItemBarCode(),tagId, item.getRemark(),
-//                    item.getCategoryID(), categoryDesc.getCategoryDesc(), item.getStatusID(), locationID, NewLoc.getLocationDesc(),
-//                    NewLoc.getFullLocationDesc(), item.getLocationID(), OldLoc.getLocationDesc(), OldLoc.getFullLocationDesc());
-//
-//            App.get().getDB().inventoryDao().insert(inventory);
-//        }
-//    }
-
     private void showValidationDialog() {
-//        if (registredInventoryList == null || registredInventoryList.isEmpty()) {
-//            finish();
-//            return;
-//        }
-//
-//        randomInventory = registredInventoryList.get(new Random().nextInt(registredInventoryList.size()));
-
         Item item = App.get().getDB().itemDao().getItemsByItemID(randomInventory.getItemID());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -575,7 +493,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                     Uri uri = Uri.parse("package:com.SmartScan");
                     Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri);
                     startActivity(intent);
-                 //   Toast.makeText(this, getString(R.string.storage_permission_accepted), Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
                     e.printStackTrace();
                     Toast.makeText(this, getString(R.string.storage_permission_denied), Toast.LENGTH_SHORT).show();
@@ -611,8 +528,8 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                     Bitmap bitmap = data.getParcelableExtra("data");
                     if (bitmap != null) {
                         byte[] imageData = bitmapToByteArray(bitmap);
-                        App.get().getDB().itemDao().SetItemImage(imageData, randomInventory.getItemID());   // Save the image to the item in format array of bytes
-                        saveBitmapToFolder(bitmap);          // Save bitmap to folder in the mobile
+                        App.get().getDB().itemDao().SetItemImage(imageData, randomInventory.getItemID());
+                        saveBitmapToFolder(bitmap);
                         finish();
                     }
                 } else {
@@ -634,7 +551,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     @SuppressLint("MissingSuperCall")
     @Override
     public void onBackPressed() {
-      //  showValidationDialog();
         rfidHandler.onDestroy();
         finish();
     }
@@ -645,7 +561,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
         if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                rfidHandler.onCreate(this);
                 rfidHandler.onCreate(this);
             } else {
                 Toast.makeText(this, R.string.bluetooth_permissions_not_granted, Toast.LENGTH_SHORT).show();
@@ -662,7 +577,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
         if (requestCode == REQUEST_WRITE_STORAGE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                requestPermission();
+                // no-op
             } else {
                 requestPermission();
             }
@@ -671,7 +586,8 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     @Override
     protected void onPause() {
-        super.onPause();}
+        super.onPause();
+    }
 
     @Override
     protected void onPostResume() {
@@ -682,48 +598,30 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(bluetoothStateReceiver);
-//        rfidHandler.onDestroy();
+        try {
+            unregisterReceiver(bluetoothStateReceiver);
+        } catch (IllegalArgumentException ignored) {}
     }
 
     @Override
     public void handleTagdata(TagData[][] tagDataArray) {
-        String tagId;
-
-        for (TagData[] tagData : tagDataArray) {
-            for (int index = 0; index < tagData.length; index++) {
-                tagId = tagData[index].getTagID();
-
+        for (TagData[] td : tagDataArray) {
+            for (int i = 0; i < td.length; i++) {
+                String tagId = td[i].getTagID();
+                if (tagId == null || tagId.isEmpty()) continue;
                 if (uniqueTagIDs.add(tagId)) {
-//                    String finalTagId = tagId;
-//                    runOnUiThread(() -> {
-//                        changeItemInventoryStatus(finalTagId);
-//                    });
-
-//                    changeItemInventoryStatus(tagId);
                     DoInventory(tagId);
                 }
             }
         }
 
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                int selectedTabPosition = tabLayout.getSelectedTabPosition();
-                switch (selectedTabPosition) {
-                    case 0:
-                        allTrx();
-                        break;
-                    case 1:
-                        registeredTrx();
-                        break;
-                    case 2:
-                        missingTrx();
-                        break;
-                    case 3:
-                        unRegisteredTrx();
-                        break;
-                }
+        runOnUiThread(() -> {
+            int selectedTabPosition = tabLayout.getSelectedTabPosition();
+            switch (selectedTabPosition) {
+                case 0: allTrx(); break;
+                case 1: registeredTrx(); break;
+                case 2: missingTrx(); break;
+                case 3: unRegisteredTrx(); break;
             }
         });
     }
@@ -731,24 +629,13 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     @Override
     public void handleTriggerPress(boolean pressed) {
         if (pressed) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    int selectedTabPosition = tabLayout.getSelectedTabPosition();
-                    switch (selectedTabPosition) {
-                        case 0:
-                          allTrx();
-                            break;
-                        case 1:
-                            registeredTrx();
-                            break;
-                        case 2:
-                            missingTrx();
-                            break;
-                        case 3:
-                           unRegisteredTrx();
-                            break;
-                    }
+            runOnUiThread(() -> {
+                int selectedTabPosition = tabLayout.getSelectedTabPosition();
+                switch (selectedTabPosition) {
+                    case 0: allTrx(); break;
+                    case 1: registeredTrx(); break;
+                    case 2: missingTrx(); break;
+                    case 3: unRegisteredTrx(); break;
                 }
             });
             rfidHandler.performInventory();
@@ -759,15 +646,10 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     @Override
     public void sendToast(String val) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(ScanItems.this, val, Toast.LENGTH_SHORT).show();
-            }
-        });
+        runOnUiThread(() -> Toast.makeText(ScanItems.this, val, Toast.LENGTH_SHORT).show());
     }
 
-    private BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
@@ -775,114 +657,14 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                 final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
-                        // When Bluetooth turned off
                         rfidHandler.onDestroy();
                         Toast.makeText(context, getString(R.string.bluetooth_turned_off), Toast.LENGTH_SHORT).show();
                         break;
                     case BluetoothAdapter.STATE_ON:
-                        // When Bluetooth turned on
-//                        rfidHandler.onCreate(this);
                         rfidHandler.onCreate(ScanItems.this);
                         break;
                 }
             }
         }
     };
-
-    private void registeredTrx() {
-        new FetchDataTask(registeredFetchedTags).execute();
-    }
-
-    private void unRegisteredTrx() {
-        new FetchDataTask(unregisteredFetchedTags).execute();
-    }
-
-    private void missingTrx() {
-        new FetchDataTask(missingFetchedTags).execute();
-    }
-
-    private void allTrx() {
-        new FetchDataTask(allScannedTags).execute();
-    }
-
-    private class FetchDataTask extends AsyncTask<Void, Void, List<Inventory>> {
-        private List<Inventory> dataList;
-
-        public FetchDataTask(List<Inventory> dataList) {
-            this.dataList = dataList;
-        }
-
-        @Override
-        protected List<Inventory> doInBackground(Void... voids) {
-            if (dataList == allScannedTags) {
-                List<Inventory> allScannedTags = new ArrayList<>();
-                allScannedTags.addAll(registeredFetchedTags);
-                allScannedTags.addAll(unregisteredFetchedTags);
-                return allScannedTags;
-            }
-            return new ArrayList<>(dataList);
-        }
-
-        @Override
-        protected void onPostExecute(List<Inventory> result) {
-            inventoryAdapter.updateData(result);
-            updateCountTextViews();
-        }
-    }
-
-//    private void registeredTrx() {
-////        allTagsList.clear();
-////        allTagsList.addAll(App.get().getDB().inventoryDao().getRegistered(locationID));
-////       updateRecyclerView(allTagsList, allItemsList);
-//        inventoryAdapter.updateData((List<Inventory>) registeredFetchedTags);
-//        updateCountTextViews();
-//        // registeredCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getRegistered(locationID).size()));
-////        if(Integer.parseInt(registeredCountData.getText().toString()) == 0)
-////        {
-////            unRegisteredTrx();
-////        }
-//
-//    }
-//
-//    private void unRegisteredTrx() {
-////        allTagsList.clear();
-////        allTagsList.addAll(App.get().getDB().inventoryDao().getUnRegistered(locationID));
-////        updateRecyclerView(allTagsList, unregisteredItemsList);
-//        inventoryAdapter.updateData((List<Inventory>) unregisteredFetchedTags);
-//        updateCountTextViews();
-//        //  unregisteredCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getUnRegistered(locationID).size()));
-//
-//    }
-//
-//    private void missingTrx() {
-////        allTagsList.clear();
-////        allTagsList.addAll(App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true));
-////        updateRecyclerView(allTagsList, missingItemsList);
-//        inventoryAdapter.updateData((List<Inventory>) missingFetchedTags);
-//        updateCountTextViews();
-//        // missingCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getInventoriesByMissingStatus(locationID, true).size()));
-////        if(Integer.parseInt(missingCountData.getText().toString()) == 0)
-////        {
-////            registeredTrx();
-////        }
-//
-//    }
-//
-//    private void allTrx() {
-////        allTagsList.clear();
-////        allTagsList.addAll(App.get().getDB().inventoryDao().getAll(locationID));
-////        updateRecyclerView(allTagsList, registeredItemsList);
-//        allScannedTags.clear();
-//        allScannedTags.addAll(registeredFetchedTags);
-//        allScannedTags.addAll(unregisteredFetchedTags);
-//        inventoryAdapter.updateData((List<Inventory>) allScannedTags);
-//        updateCountTextViews();
-//      //  allCountData.setText(Integer.toString(App.get().getDB().inventoryDao().getAll(locationID).size()));
-//
-//    }
-
-    public interface CheckItemCallback {
-        void onCheckComplete(boolean result);
-    }
 }
-
