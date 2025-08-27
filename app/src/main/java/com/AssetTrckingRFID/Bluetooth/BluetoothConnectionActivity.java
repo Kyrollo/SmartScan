@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.AssetTrckingRFID.R;
+import com.AssetTrckingRFID.ScanItems.ScanItems;
 import com.zebra.rfid.api3.TagData;
 
 public class BluetoothConnectionActivity extends AppCompatActivity implements BluetoothHandler.RFIDHandlerBluetoothListener {
@@ -110,12 +111,14 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     @Override
     protected void onResume() {
         super.onResume();
+        rfidHandler.updateContext(BluetoothConnectionActivity.this);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
 //        rfidHandler.onDestroy();
+//        rfidHandler.removeContext();
     }
 
     @Override
@@ -126,8 +129,9 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     @Override
     protected void onPostResume() {
         super.onPostResume();
-        String result = rfidHandler.onResume();
-        textViewStatusRFID.setText(result);
+//        String result = rfidHandler.onResume();
+//        textViewStatusRFID.setText(result);
+        rfidHandler.checkRFIDConnectionStatus();
     }
 
     @Override
@@ -136,11 +140,11 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
     @Override
     public void handleTriggerPress(boolean pressed) {
-        if (pressed) {
-            rfidHandler.performInventory();
-        } else {
-            rfidHandler.stopInventory();
-        }
+//        if (pressed) {
+//            rfidHandler.performInventory();
+//        } else {
+//            rfidHandler.stopInventory();
+//        }
     }
 
     @Override

@@ -6,6 +6,7 @@ import android.content.res.Configuration;
 
 import androidx.room.Room;
 
+import com.AssetTrckingRFID.Bluetooth.BluetoothHandler;
 import com.AssetTrckingRFID.DataBase.AppDataBase;
 import com.zebra.rfid.api3.RFIDReader;
 
@@ -19,10 +20,6 @@ public class App extends Application {
     private AppDataBase database;
     private RFIDReader rfidReader;
 
-    public static App get() {
-        return INSTANCE;
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -31,6 +28,10 @@ public class App extends Application {
                 .allowMainThreadQueries()
                 .fallbackToDestructiveMigration()
                 .build();
+    }
+
+    public static App get() {
+        return INSTANCE;
     }
 
     public AppDataBase getDB() {

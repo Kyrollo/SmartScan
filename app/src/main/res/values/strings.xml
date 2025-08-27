@@ -98,4 +98,14 @@
     <string name="camera_permission_denied">Camera permission denied</string>
     <string name="storage_permission_accepted">Storage permission accepted</string>
     <string name="storage_permission_denied">Storage permission Denied</string>
+    <string name="wait_for_connection">Waiting for connection...</string>
+    <string name="connected_to">"Connected to : "</string>
+    <string name="rfid_reader_connected">RFID Reader Connected</string>
+    <string name="rfid_reader_failed">RFID Reader Failed</string>
+    <string name="rfid_not_connected">RFID not connected</string>
+    <string name="rfid_connected">RFID Connected</string>
+    <string name="rfid_is_already_connected">"RFID is already connected: "</string>
+    <string name="rfid_reader_appeared">RFID Reader Appeared</string>
+    <string name="failed_to_find_or_connect_reader">Failed to find or connect reader</string>
+    <string name="disconnected">Disconnected</string>
 </resources>
