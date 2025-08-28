@@ -16,6 +16,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.ScanItems.ScanItems;
 import com.zebra.rfid.api3.TagData;
@@ -56,6 +58,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         }
 
         refreshConnection.setOnClickListener((v -> reconnectToRFID()));
+
     }
 
     public void showProgressBar() {
@@ -83,6 +86,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     @SuppressLint("MissingSuperCall")
     @Override
     public void onBackPressed() {
+        rfidHandler.removeContext(this);
         finish();
     }
 
@@ -90,7 +94,8 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                rfidHandler.onCreate(this);
+//                rfidHandler.onCreate(this);
+                rfidHandler.assignBluetoothConnectionContext(this);
             } else {
                 Toast.makeText(this, "Bluetooth Permissions not granted", Toast.LENGTH_SHORT).show();
             }
@@ -116,9 +121,8 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
     @Override
     protected void onDestroy() {
+        rfidHandler.removeContext(this);
         super.onDestroy();
-//        rfidHandler.onDestroy();
-//        rfidHandler.removeContext();
     }
 
     @Override
@@ -140,11 +144,11 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
     @Override
     public void handleTriggerPress(boolean pressed) {
-//        if (pressed) {
-//            rfidHandler.performInventory();
-//        } else {
-//            rfidHandler.stopInventory();
-//        }
+        if (pressed) {
+            rfidHandler.performInventory();
+        } else {
+            rfidHandler.stopInventory();
+        }
     }
 
     @Override

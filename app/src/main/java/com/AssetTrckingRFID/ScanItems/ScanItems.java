@@ -203,7 +203,8 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     }
 
     private void initializeRfid() {
-        rfidHandler.updateContext(ScanItems.this);
+//        rfidHandler.updateContext(ScanItems.this);
+
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!bluetoothAdapter.isEnabled()) {
             Toast.makeText(this, getString(R.string.bluetooth_disabled), Toast.LENGTH_SHORT).show();
@@ -555,6 +556,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     @Override
     public void onBackPressed() {
 //        rfidHandler.onDestroy();
+        rfidHandler.removeContext(this);
         new FlushPendingUpdatesTask(this::finish).execute();
         finish();
     }
@@ -565,7 +567,8 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
         if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                rfidHandler.onCreate(this);
+//                rfidHandler.onCreate(this);
+                rfidHandler.assignScanItemsContext(this);
             } else {
                 Toast.makeText(this, R.string.bluetooth_permissions_not_granted, Toast.LENGTH_SHORT).show();
             }
@@ -597,6 +600,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     protected void onPostResume() {
         super.onPostResume();
         rfidHandler.onResume();
+        rfidHandler.assignScanItemsContext(this);
     }
 
     @Override
@@ -607,6 +611,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     @Override
     protected void onDestroy() {
+        rfidHandler.removeContext(this);
         super.onDestroy();
         try {
             // Flush pending updates
