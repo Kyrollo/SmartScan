@@ -19,7 +19,6 @@ public class App extends Application {
     private static final String PORT_NO = "PORT_NO";
     private AppDataBase database;
     private RFIDReader rfidReader;
-    private BluetoothHandler bluetoothHandler;
 
     @Override
     public void onCreate() {
@@ -71,10 +70,4 @@ public class App extends Application {
         this.rfidReader = rfidReader;
     }
 
-    public BluetoothHandler getBluetoothHandler() {
-        if (bluetoothHandler == null) {
-            bluetoothHandler = new BluetoothHandler();
-        }
-        return bluetoothHandler;
-    }
 }

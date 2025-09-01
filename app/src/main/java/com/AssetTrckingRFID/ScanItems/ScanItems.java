@@ -39,6 +39,7 @@ import com.AssetTrckingRFID.Tables.Category;
 import com.AssetTrckingRFID.Tables.Inventory;
 import com.AssetTrckingRFID.Tables.Item;
 import com.AssetTrckingRFID.Tables.Location;
+import com.AssetTrckingRFID.Utilities.LoadingDialog;
 import com.google.android.material.tabs.TabLayout;
 import com.zebra.rfid.api3.TagData;
 
@@ -54,7 +55,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFIDHandlerBluetoothListener {
-
     // UI
     private RecyclerView recyclerView;
     private InventoryAdapter inventoryAdapter;
@@ -95,6 +95,8 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_WRITE_STORAGE = 300;
 
+    private LoadingDialog loadingDialog;
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,9 +104,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         setContentView(R.layout.activity_scan_items);
 
         initializePage();
-
-        rfidHandler = new BluetoothHandler();
-
 
         retrieveData();
         buildRecyclerView();
@@ -183,13 +182,16 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         recyclerView.setAdapter(inventoryAdapter);
     }
 
-    public void showProgressBar() { progressBarLayout.setVisibility(View.VISIBLE); }
+    public void showProgressBar() {
+        loadingDialog.startLoadingDialog();
+    }
 
-    public void hideProgressBar() { progressBarLayout.setVisibility(View.GONE); }
+    public void hideProgressBar() {
+        loadingDialog.dismissDialog();
+    }
 
     private void buttonEnd() {
         btnEnd.setOnClickListener(v -> {
-//            rfidHandler.onDestroy();
             new FlushPendingUpdatesTask(this::finish).execute();
         });
     }
@@ -203,8 +205,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     }
 
     private void initializeRfid() {
-//        rfidHandler.updateContext(ScanItems.this);
-
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!bluetoothAdapter.isEnabled()) {
             Toast.makeText(this, getString(R.string.bluetooth_disabled), Toast.LENGTH_SHORT).show();
@@ -215,9 +215,11 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
             } else {
+                showProgressBar();
                 rfidHandler.onCreate(ScanItems.this);
             }
         } else {
+            showProgressBar();
             rfidHandler.onCreate(ScanItems.this);
         }
     }
@@ -232,6 +234,10 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         btnEnd = findViewById(R.id.btnEnd);
         progressBarLayout = findViewById(R.id.progressBarLayout);
         recyclerView.setVisibility(View.VISIBLE);
+
+        loadingDialog = new LoadingDialog(this);
+
+        rfidHandler = new BluetoothHandler();
     }
 
     private void initializeTabs() {
@@ -567,7 +573,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
         if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                rfidHandler.onCreate(this);
+                showProgressBar();
                 rfidHandler.assignScanItemsContext(this);
             } else {
                 Toast.makeText(this, R.string.bluetooth_permissions_not_granted, Toast.LENGTH_SHORT).show();
@@ -672,10 +678,11 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                 final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
-//                        rfidHandler.onDestroy();
+                        hideProgressBar();
                         Toast.makeText(context, getString(R.string.bluetooth_turned_off), Toast.LENGTH_SHORT).show();
                         break;
                     case BluetoothAdapter.STATE_ON:
+                        showProgressBar();
                         rfidHandler.onCreate(ScanItems.this);
                         break;
                 }

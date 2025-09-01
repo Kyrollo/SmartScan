@@ -15,6 +15,7 @@ import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.API.Retrofit;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.Tables.Users;
+import com.AssetTrckingRFID.Utilities.LoadingDialog;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class ServerConfigActivity extends AppCompatActivity {
     private APIService apiService;
     private List<Users> users;
     FrameLayout progressBarContainer;
+    private LoadingDialog loadingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +53,8 @@ public class ServerConfigActivity extends AppCompatActivity {
         testConnectionButton = findViewById(R.id.testConnectionButton);
         saveButton = findViewById(R.id.saveButton);
         progressBarContainer = findViewById(R.id.progressBarContainer);
+
+        loadingDialog = new LoadingDialog(this);
 
         TextWatcher textWatcher = new TextWatcher() {
             @Override
@@ -142,10 +146,10 @@ public class ServerConfigActivity extends AppCompatActivity {
                     showProgressBar();
                     users = response.body();
                     insertUsers();
-                    hideProgressBar();
                 } else {
                     Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
                 }
+                hideProgressBar();
             }
 
             @Override
@@ -164,12 +168,11 @@ public class ServerConfigActivity extends AppCompatActivity {
         }
     }
 
-    private void hideProgressBar() {
-        progressBarContainer.setVisibility(View.GONE);
-    }
-
     private void showProgressBar() {
-        progressBarContainer.setVisibility(View.VISIBLE);
+        loadingDialog.startLoadingDialog();
     }
 
+    private void hideProgressBar() {
+        loadingDialog.dismissDialog();
+    }
 }

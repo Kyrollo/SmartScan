@@ -108,4 +108,5 @@
     <string name="rfid_reader_appeared">RFID Reader Appeared</string>
     <string name="failed_to_find_or_connect_reader">Failed to find or connect reader</string>
     <string name="disconnected">Disconnected</string>
+    <string name="loading">Loading</string>
 </resources>

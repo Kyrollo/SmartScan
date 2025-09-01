@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat;
 import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.ScanItems.ScanItems;
+import com.AssetTrckingRFID.Utilities.LoadingDialog;
 import com.zebra.rfid.api3.TagData;
 
 public class BluetoothConnectionActivity extends AppCompatActivity implements BluetoothHandler.RFIDHandlerBluetoothListener {
@@ -28,10 +29,11 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     private ImageView refreshConnection;
     private BluetoothHandler rfidHandler;
     private FrameLayout progressBarContainer;
-
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
+
+    private LoadingDialog loadingDialog;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -39,13 +41,23 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bluetooth_connection);
 
+        initViews();
+    }
+
+    private void initViews() {
         textrfid = findViewById(R.id.textrfid);
         textViewStatusRFID = findViewById(R.id.textViewStatusRFID);
         refreshConnection = findViewById(R.id.refreshConnection);
         progressBarContainer = findViewById(R.id.progressBarContainer);
 
+        loadingDialog = new LoadingDialog(this);
+
         rfidHandler = new BluetoothHandler();
 
+        initializeRfid();
+    }
+
+    private void initializeRfid() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this,
@@ -58,15 +70,14 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         }
 
         refreshConnection.setOnClickListener((v -> reconnectToRFID()));
-
     }
 
     public void showProgressBar() {
-        progressBarContainer.setVisibility(View.VISIBLE);
+        loadingDialog.startLoadingDialog();
     }
 
     public void hideProgressBar() {
-        progressBarContainer.setVisibility(View.GONE);
+        loadingDialog.dismissDialog();
     }
 
     private void reconnectToRFID() {

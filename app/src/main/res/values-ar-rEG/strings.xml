@@ -108,4 +108,5 @@
     <string name="rfid_reader_appeared">ظهر RFID</string>
     <string name="failed_to_find_or_connect_reader">فشل في العثور على RFID أو الاتصال به</string>
     <string name="disconnected">منقطع</string>
+    <string name="loading">جار التحميل</string>
 </resources>
