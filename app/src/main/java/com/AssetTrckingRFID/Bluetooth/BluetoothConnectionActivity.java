@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,22 +16,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.R;
-import com.AssetTrckingRFID.ScanItems.ScanItems;
 import com.AssetTrckingRFID.Utilities.LoadingDialog;
 import com.zebra.rfid.api3.TagData;
 
 public class BluetoothConnectionActivity extends AppCompatActivity implements BluetoothHandler.RFIDHandlerBluetoothListener {
-    private TextView textrfid;
+    private TextView  textrfid;
     public TextView textViewStatusRFID;
     private ImageView refreshConnection;
     private BluetoothHandler rfidHandler;
-    private FrameLayout progressBarContainer;
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
-
     private LoadingDialog loadingDialog;
 
     @SuppressLint("MissingInflatedId")
@@ -48,7 +43,6 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         textrfid = findViewById(R.id.textrfid);
         textViewStatusRFID = findViewById(R.id.textViewStatusRFID);
         refreshConnection = findViewById(R.id.refreshConnection);
-        progressBarContainer = findViewById(R.id.progressBarContainer);
 
         loadingDialog = new LoadingDialog(this);
 
@@ -105,7 +99,6 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                rfidHandler.onCreate(this);
                 rfidHandler.assignBluetoothConnectionContext(this);
             } else {
                 Toast.makeText(this, "Bluetooth Permissions not granted", Toast.LENGTH_SHORT).show();
@@ -144,8 +137,6 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     @Override
     protected void onPostResume() {
         super.onPostResume();
-//        String result = rfidHandler.onResume();
-//        textViewStatusRFID.setText(result);
         rfidHandler.checkRFIDConnectionStatus();
     }
 

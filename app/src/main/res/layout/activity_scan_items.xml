@@ -50,25 +50,25 @@
             android:id="@+id/tabAllTags"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:text="All Tags" />
+            android:text="@string/all_tags" />
 
         <com.google.android.material.tabs.TabItem
             android:id="@+id/tabRegisteredTags"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:text="Registered" />
+            android:text="@string/registered" />
 
         <com.google.android.material.tabs.TabItem
             android:id="@+id/tabMissingTags"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:text="Missing" />
+            android:text="@string/missing" />
 
         <com.google.android.material.tabs.TabItem
             android:id="@+id/tabUnregisteredTags"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
-            android:text="Unregistered" />
+            android:text="@string/unregistered" />
     </com.google.android.material.tabs.TabLayout>
 
     <LinearLayout

@@ -12,7 +12,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Item Bar Code:"
+            android:text="@string/item_barcode"
             android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="14sp" />
@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="2.4"
             android:textColor="@color/black"
-            android:text="barcode" />
+            android:text="@string/barcode" />
     </LinearLayout>
 
     <View
@@ -37,7 +37,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Item Desc:"
+            android:text="@string/item_desc"
             android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="14sp" />
@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="2.4"
             android:textColor="@color/black"
-            android:text="description" />
+            android:text="@string/description" />
     </LinearLayout>
 
     <View
@@ -62,7 +62,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Remark:"
+            android:text="@string/remark"
             android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="14sp" />
@@ -72,7 +72,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="2.4"
             android:textColor="@color/black"
-            android:text="remark" />
+            android:text="@string/remark" />
     </LinearLayout>
 
     <View
@@ -87,7 +87,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="TagID:"
+            android:text="@string/tagid"
             android:textColor="@color/black"
             android:textStyle="bold"
             android:textSize="14sp" />
@@ -97,12 +97,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="2.4"
             android:textColor="@color/black"
-            android:text="opt3" />
+            android:text="@string/tagId" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="4dp"
         android:layout_marginTop="18dp"
-        android:background="#CCCCCCCC" />
+        android:background="@color/grey" />
 </LinearLayout>

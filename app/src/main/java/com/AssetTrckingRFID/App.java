@@ -4,14 +4,13 @@ import android.app.Application;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 
+import androidx.annotation.NonNull;
 import androidx.room.Room;
 
-import com.AssetTrckingRFID.Bluetooth.BluetoothHandler;
 import com.AssetTrckingRFID.DataBase.AppDataBase;
 import com.zebra.rfid.api3.RFIDReader;
 
 public class App extends Application {
-
     public static App INSTANCE;
     private static final String DATABASE_NAME = "AppDataBase";
     private static final String PREFERENCES = "RoomDemo.preferences";
@@ -39,7 +38,7 @@ public class App extends Application {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
     }
 

@@ -37,7 +37,6 @@ import com.AssetTrckingRFID.API.Retrofit;
 import com.AssetTrckingRFID.API.UploadInventory;
 import com.AssetTrckingRFID.API.UploadItems;
 import com.AssetTrckingRFID.ApiClasses.*;
-import java.util.concurrent.CountDownLatch;
 
 import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.Assign.AssignTags;
@@ -194,13 +193,16 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         resources.updateConfiguration(config, dm);
 
         // Restart the current activity
-        Intent intent = getIntent();
-        username = intent.getStringExtra("USERNAME");
-        userId = intent.getIntExtra("USERID", -1);
-        intent.putExtra("USERNAME", username);
-        intent.putExtra("PASSWORD", userId);
-        startActivity(intent);
-        finish();
+//        Intent intent = getIntent();
+//        username = intent.getStringExtra("USERNAME");
+//        userId = intent.getIntExtra("USERID", -1);
+//        intent.putExtra("USERNAME", username);
+//        intent.putExtra("PASSWORD", userId);
+//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+//        startActivity(intent);
+//        finish();
+
+        recreate();
     }
 
     private void fetchItems() {
@@ -704,10 +706,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             Intent intent = new Intent(this, ServerConfigActivity.class);
             startActivity(intent);
         }
-        else if (id == R.id.nav_assign_tags) {
-            Intent intent = new Intent(this, AssignTags.class);
-            startActivity(intent);
-        }
+//        else if (id == R.id.nav_assign_tags) {
+//            Intent intent = new Intent(this, AssignTags.class);
+//            startActivity(intent);
+//        }
         else if (id == R.id.nav_logout) {
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);

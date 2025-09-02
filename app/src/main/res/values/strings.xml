@@ -109,4 +109,14 @@
     <string name="failed_to_find_or_connect_reader">Failed to find or connect reader</string>
     <string name="disconnected">Disconnected</string>
     <string name="loading">Loading</string>
+    <string name="item_desc">Item Desc:</string>
+    <string name="description">description</string>
+    <string name="remark">Remark:</string>
+    <string name="tagid">TagID:</string>
+    <string name="tagId">TagID</string>
+    <string name="all_tags">All Tags</string>
+    <string name="registered">Registered</string>
+    <string name="missing">Missing</string>
+    <string name="unregistered">Unregistered</string>
+    <string name="bluetooth">Bluetooth</string>
 </resources>

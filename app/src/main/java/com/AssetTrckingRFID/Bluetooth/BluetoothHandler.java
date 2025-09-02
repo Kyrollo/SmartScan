@@ -31,7 +31,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     private ArrayList<DCSScannerInfo> scannerList;
     private int scannerID;
     static MyAsyncTask cmdExecTask = null;
-    private int MAX_POWER = 270;
+    private int MAX_POWER = 300;
     String readerName = "RFD4031-G10B700-US";
 
     public synchronized void onCreate(Context context) {
@@ -57,8 +57,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
             switch (eventType) {
                 case "connected":
                     activity.sendToast(ctx.getString(R.string.rfid_connected));
-                    activity.updateRFIDStatus(ctx.getString(R.string.rfid_is_already_connected) +
-                                            (reader != null ? reader.getHostName() : ""));
+                    activity.updateRFIDStatus(ctx.getString(R.string.rfid_is_already_connected) + (reader != null ? reader.getHostName() : ""));
                     break;
                 case "connecting":
                     activity.sendToast(ctx.getString(R.string.connecting_to_rfid_reader));
@@ -137,9 +136,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
             if (invalidUsageException != null || availableRFIDReaderList.size() == 0) {
                 readers.Dispose();
                 readers = null;
-                if (readers == null) {
-                    readers = new Readers(getCurrentContext(), ENUM_TRANSPORT.BLUETOOTH);
-                }
+                readers = new Readers(getCurrentContext(), ENUM_TRANSPORT.BLUETOOTH);
             }
             return null;
         }
@@ -251,7 +248,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                 e.printStackTrace();
                 Log.d(TAG, "OperationFailureException " + e.getVendorMessage());
                 handleConnectionFailure();
-                return "Connection failed" + e.getVendorMessage() + " " + e.getResults().toString();
+                return "Connection failed: " + e.getVendorMessage() + " " + e.getResults().toString();
             }
         }
 
@@ -314,9 +311,9 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
 
                 Antennas.AntennaRfConfig config = reader.Config.Antennas.getAntennaRfConfig(1);
 
-                // Configure based on activity type
                 if (ctx instanceof BluetoothConnectionActivity) {
-                    config.setTransmitPowerIndex(MAX_POWER);
+                    int average_power = MAX_POWER / 2;
+                    config.setTransmitPowerIndex(average_power);
                     config.setrfModeTableIndex(0);
                     config.setTari(0);
                 } else if (ctx instanceof ScanItems) {
@@ -571,37 +568,6 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
             }
         }
 
-//        @SuppressLint("StaticFieldLeak")
-//        public void eventStatusNotify(RfidStatusEvents rfidStatusEvents) {
-//            Log.d(TAG, "Status Notification: " + rfidStatusEvents.StatusEventData.getStatusEventType());
-//
-//            if (rfidStatusEvents.StatusEventData.getStatusEventType() == STATUS_EVENT_TYPE.HANDHELD_TRIGGER_EVENT) {
-//                Context ctx = getCurrentContext();
-//                boolean isPressed = rfidStatusEvents.StatusEventData.HandheldTriggerEventData.getHandheldEvent() ==
-//                                   HANDHELD_TRIGGER_EVENT_TYPE.HANDHELD_TRIGGER_PRESSED;
-//
-//                Log.d(TAG, isPressed ? "HANDHELD_TRIGGER_PRESSED" : "HANDHELD_TRIGGER_RELEASED");
-//                Log.d(TAG, "Context: " + (ctx != null ? ctx.getClass().getSimpleName() : "null"));
-//
-//                if (ctx instanceof BluetoothConnectionActivity) {
-//                    ((BluetoothConnectionActivity) ctx).runOnUiThread(() ->
-//                        ((BluetoothConnectionActivity) ctx).handleTriggerPress(isPressed));
-//                } else if (ctx instanceof ScanItems) {
-//                    ((ScanItems) ctx).runOnUiThread(() ->
-//                        ((ScanItems) ctx).handleTriggerPress(isPressed));
-//                }
-//            }
-//
-//            if (rfidStatusEvents.StatusEventData.getStatusEventType() == STATUS_EVENT_TYPE.DISCONNECTION_EVENT) {
-//                new AsyncTask<Void, Void, Void>() {
-//                    @Override
-//                    protected Void doInBackground(Void... voids) {
-//                        disconnect();
-//                        return null;
-//                    }
-//                }.execute();
-//            }
-//        }
     }
 
     private class AsyncDataUpdate extends AsyncTask<TagData[], Void, Void> {

@@ -79,7 +79,7 @@
     <string name="no_internet_connection">لا يوجد اتصال بالإنترنت. يرجى الاتصال بالإنترنت أولاً</string>
     <string name="internet_disconnected_while_downloading">انقطع الإنترنت أثناء تحميل البيانات. يرجى المحاولة مرة أخرى</string>
     <string name="internet_disconnected_while_uploading">انقطع الإنترنت أثناء رفع البيانات. يرجى المحاولة مرة أخرى</string>
-    <string name="asset_rfid_tracking">تتبع الأصول بـ RFID</string>
+    <string name="asset_rfid_tracking">Asset Tracking RFID</string>
     <string name="connecting_to_rfid_reader">الاتصال بقارئ RFID</string>
     <string name="rfid_reader_disappeared">اختفى قارئ RFID</string>
     <string name="disconnecting_reader">قطع الاتصال مع القارئ</string>
@@ -109,4 +109,14 @@
     <string name="failed_to_find_or_connect_reader">فشل في العثور على RFID أو الاتصال به</string>
     <string name="disconnected">منقطع</string>
     <string name="loading">جار التحميل</string>
+    <string name="item_desc">وصف العنصر:</string>
+    <string name="description">الوصف</string>
+    <string name="remark">ملاحظة:</string>
+    <string name="tagid">معرف العلامة:</string>
+    <string name="tagId">معرف العلامة</string>
+    <string name="all_tags">جميع العلامات</string>
+    <string name="registered">مسجل</string>
+    <string name="missing">مفقود</string>
+    <string name="unregistered">غير مسجل</string>
+    <string name="bluetooth">بلوتوث</string>
 </resources>

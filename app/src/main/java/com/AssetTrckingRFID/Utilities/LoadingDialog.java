@@ -1,5 +1,6 @@
 package com.AssetTrckingRFID.Utilities;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.view.LayoutInflater;
@@ -41,6 +42,4 @@ public class LoadingDialog {
     private boolean isActivityValid() {
         return activity != null && !activity.isFinishing() && !activity.isDestroyed();
     }
-
-    public int flag(){return flag;}
 }

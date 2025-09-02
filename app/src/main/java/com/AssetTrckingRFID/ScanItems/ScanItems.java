@@ -429,7 +429,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         protected void onPostExecute(Boolean result) {if (callback != null) callback.onCheckComplete(result); }
     }
 
-    // Rendering
     private void registeredTrx() { new RenderSetTask(registeredTagIds).execute(); }
     private void unRegisteredTrx() { new RenderSetTask(unregisteredTagIds).execute(); }
     private void missingTrx() { new RenderSetTask(missingTagIds).execute(); }
