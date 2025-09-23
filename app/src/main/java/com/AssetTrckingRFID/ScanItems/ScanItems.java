@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -47,6 +48,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,6 +98,9 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     private static final int REQUEST_WRITE_STORAGE = 300;
 
     private LoadingDialog loadingDialog;
+
+    private AlertDialog.Builder builder;
+    AlertDialog dialog;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -192,7 +197,11 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     private void buttonEnd() {
         btnEnd.setOnClickListener(v -> {
-            new FlushPendingUpdatesTask(this::finish).execute();
+            if (shouldValidate()) {
+                showValidationDialog();
+            } else {
+                new FlushPendingUpdatesTask(this::finish).execute();
+            }
         });
     }
 
@@ -472,10 +481,25 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         unregisteredCountData.setText(String.valueOf(unregisteredCount));
     }
 
+    private boolean shouldValidate() {
+        if (registeredTagIds.isEmpty()) {
+            return false;
+        }
+
+        List<String> registeredList = new ArrayList<>(registeredTagIds);
+        int randomIndex = (int) (Math.random() * registeredList.size());
+        String randomTagId = registeredList.get(randomIndex);
+        randomInventory = tagIdToInventory.get(randomTagId);
+        return true;
+    }
+
     private void showValidationDialog() {
         Item item = App.get().getDB().itemDao().getItemsByItemID(randomInventory.getItemID());
+        if (item == null) {
+            return;
+        }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder = new AlertDialog.Builder(this);
         builder.setTitle(getString((R.string.validation_required)));
         builder.setMessage(getString(R.string.please_take_a_photo_of_the_following_item) +
                 getString(R.string.item_barcode) + item.getItemBarCode() + "\n\n" +
@@ -490,7 +514,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
             }
         });
 
-        AlertDialog dialog = builder.create();
+        dialog = builder.create();
         dialog.setCancelable(false);
         dialog.show();
     }
@@ -511,20 +535,20 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     }
 
     private void saveBitmapToFolder(Bitmap bitmap) {
-        File directory = new File(Environment.getExternalStorageDirectory(), "SmartScanImages");
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_" + System.currentTimeMillis() + ".png");
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SmartScanImages");
 
-        String fileName = "IMG_" + System.currentTimeMillis() + ".png";
-        File file = new File(directory, fileName);
-
-        try (FileOutputStream out = new FileOutputStream(file)) {
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-            Toast.makeText(this, "Image Saved", Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
+        Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        if (uri != null) {
+            try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                Toast.makeText(this, "Image Saved", Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -537,9 +561,9 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                     Bitmap bitmap = data.getParcelableExtra("data");
                     if (bitmap != null) {
                         byte[] imageData = bitmapToByteArray(bitmap);
-                        App.get().getDB().itemDao().SetItemImage(imageData, randomInventory.getItemID());
+                        App.get().getDB().inventoryDao().SetItemImage(imageData, randomInventory.getItemID());
                         saveBitmapToFolder(bitmap);
-                        finish();
+                        new FlushPendingUpdatesTask(this::finish).execute();
                     }
                 } else {
                     showValidationDialog();
@@ -560,10 +584,13 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     @SuppressLint("MissingSuperCall")
     @Override
     public void onBackPressed() {
-//        rfidHandler.onDestroy();
+        if (dialog != null && dialog.isShowing()) {
+            Toast.makeText(this, R.string.please_complete_validation, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         rfidHandler.removeContext(this);
         new FlushPendingUpdatesTask(this::finish).execute();
-        finish();
     }
 
     @Override
@@ -588,9 +615,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         }
 
         if (requestCode == REQUEST_WRITE_STORAGE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // no-op
-            } else {
+            if (grantResults.length <= 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 requestPermission();
             }
         }

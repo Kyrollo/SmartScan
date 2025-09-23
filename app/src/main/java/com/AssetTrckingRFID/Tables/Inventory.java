@@ -115,58 +115,6 @@ public class Inventory {
     @ColumnInfo(name = "image_data")
     public byte[] imageData;
 
-//    public Inventory(int inventoryID, String inventoryDate, int userID, int itemID, String itemBarcode, String remark, String categoryId, String categoryDesc, int statusID, String locationID, String locationDesc, String fullLocationDesc, Boolean scanned, Boolean missing, Boolean manual, Boolean reallocated, String oldLocationID, String oldLocationDesc, String oldFullLocationDesc, Boolean statusUpdated, Boolean isChecked, Boolean registered, int createdBy, String creationDate, int modifiedBy, String modificationDate, int reasonID) {
-//        InventoryID = inventoryID;
-//        InventoryDate = inventoryDate;
-//        UserID = userID;
-//        ItemID = itemID;
-//        ItemBarcode = itemBarcode;
-//        Remark = remark;
-//        CategoryId = categoryId;
-//        CategoryDesc = categoryDesc;
-//        StatusID = statusID;
-//        LocationID = locationID;
-//        LocationDesc = locationDesc;
-//        FullLocationDesc = fullLocationDesc;
-//        Scanned = scanned;
-//        Missing = missing;
-//        Manual = manual;
-//        Reallocated = reallocated;
-//        OldLocationID = oldLocationID;
-//        OldLocationDesc = oldLocationDesc;
-//        OldFullLocationDesc = oldFullLocationDesc;
-//        StatusUpdated = statusUpdated;
-//        IsChecked = isChecked;
-//        Registered = registered;
-//        CreatedBy = createdBy;
-//        CreationDate = creationDate;
-//        ModifiedBy = modifiedBy;
-//        ModificationDate = modificationDate;
-//        ReasonID = reasonID;
-//    }
-
-//    // general constructor
-//    public Inventory(int inventoryID, String inventoryDate, int userID, int itemID, String itemBarcode, String remark, String categoryId,
-//                     String categoryDesc, int statusID, String locationID, String locationDesc, String fullLocationDesc, Boolean scanned,
-//                     Boolean missing, Boolean manual, int createdBy) {
-//        InventoryID = inventoryID;
-//        InventoryDate = inventoryDate;
-//        UserID = userID;
-//        ItemID = itemID;
-//        ItemBarcode = itemBarcode;
-//        Remark = remark;
-//        CategoryId = categoryId;
-//        CategoryDesc = categoryDesc;
-//        StatusID = statusID;
-//        LocationID = locationID;
-//        LocationDesc = locationDesc;
-//        FullLocationDesc = fullLocationDesc;
-//        Scanned = scanned;
-//        Missing = missing;
-//        Manual = manual;
-//        CreatedBy = createdBy;
-//
-//    }
     // Constructor for the insert an item in Inventory Table
     public Inventory(int inventoryID, String inventoryDate, int userID, int itemID, String itemBarcode, String tagId, String remark, String categoryId,
                      String categoryDesc, int statusID, String locationID, String locationDesc, String fullLocationDesc) {

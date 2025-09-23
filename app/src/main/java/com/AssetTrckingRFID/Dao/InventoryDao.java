@@ -63,7 +63,8 @@ public interface InventoryDao {
     @Query("SELECT * FROM inventory WHERE  tag_id IS NOT NULL")
     List<Inventory> getAllTagsID();
 
-
+    @Query("UPDATE inventory SET image_data = :imageData WHERE ItemID = :itemId")
+    void SetItemImage(byte[] imageData, int itemId);
 
     @Query("UPDATE inventory SET image_data = :imageData WHERE item_barcode = :barcode")
     void updateItemImage(byte[] imageData, String barcode);

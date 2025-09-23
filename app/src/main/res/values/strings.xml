@@ -119,4 +119,5 @@
     <string name="missing">Missing</string>
     <string name="unregistered">Unregistered</string>
     <string name="bluetooth">Bluetooth</string>
+    <string name="please_complete_validation">Please complete validation</string>
 </resources>
