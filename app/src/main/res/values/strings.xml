@@ -120,4 +120,5 @@
     <string name="unregistered">Unregistered</string>
     <string name="bluetooth">Bluetooth</string>
     <string name="please_complete_validation">Please complete validation</string>
+    <string name="failed_to_connect">Failed to connect</string>
 </resources>
