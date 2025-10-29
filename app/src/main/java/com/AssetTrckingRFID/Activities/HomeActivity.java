@@ -39,7 +39,7 @@ import com.AssetTrckingRFID.API.UploadItems;
 import com.AssetTrckingRFID.ApiClasses.*;
 
 import com.AssetTrckingRFID.App;
-import com.AssetTrckingRFID.Assign.AssignTags;
+//import com.AssetTrckingRFID.Assign.AssignTags;
 import com.AssetTrckingRFID.Bluetooth.BluetoothConnectionActivity;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.Tables.*;

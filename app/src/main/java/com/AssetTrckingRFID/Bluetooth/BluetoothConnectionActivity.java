@@ -77,7 +77,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
     private void checkBluetoothAndConnect() {
         if (bluetoothAdapter == null) {
-            Toast.makeText(this, "الجهاز لا يدعم البلوتوث", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.bluetooth_not_support), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -114,7 +114,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     }
 
     private void connectToRFID() {
-        showProgressBar();
+//        showProgressBar();
         rfidHandler.onCreate(this);
     }
 
@@ -132,6 +132,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
             return;
         }
 
+        showProgressBar();
         rfidHandler.onDestroy();
         connectToRFID();
     }
@@ -229,6 +230,21 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         runOnUiThread(() -> Toast.makeText(this, val, Toast.LENGTH_SHORT).show());
     }
 
+    @Override
+    public void onConnectionStatusChanged(boolean isConnected, boolean isFailed) {
+        runOnUiThread(() -> {
+            if (isConnected) {
+                hideProgressBar();
+                Toast.makeText(this, getString(R.string.rfid_connected), Toast.LENGTH_SHORT).show();
+            } else if (isFailed) {
+                hideProgressBar();
+                Toast.makeText(this, getString(R.string.rfid_not_connected), Toast.LENGTH_SHORT).show();
+            } else {
+                showProgressBar();
+            }
+        });
+    }
+
     private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -238,10 +254,12 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
                         hideProgressBar();
-                        updateRFIDStatus("Bluetooth Off");
+                        Toast.makeText(context, getString(R.string.bluetooth_turned_off), Toast.LENGTH_SHORT).show();
                         rfidHandler.onDestroy();
                         break;
+                    case BluetoothAdapter.STATE_TURNING_ON:
                     case BluetoothAdapter.STATE_ON:
+                        showProgressBar();
                         connectToRFID();
                         break;
                 }

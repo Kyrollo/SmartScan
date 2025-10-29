@@ -104,7 +104,7 @@
     <string name="rfid_reader_failed">فشل في RFID</string>
     <string name="rfid_not_connected">RFID غير متصل</string>
     <string name="rfid_connected">RFID متصل</string>
-    <string name="rfid_is_already_connected">"RFID متصل بالفعل: "</string>
+    <string name="rfid_is_already_connected">RFID متصل بالفعل</string>
     <string name="rfid_reader_appeared">ظهر RFID</string>
     <string name="failed_to_find_or_connect_reader">فشل في العثور على RFID أو الاتصال به</string>
     <string name="disconnected">منقطع</string>
@@ -121,4 +121,7 @@
     <string name="bluetooth">بلوتوث</string>
     <string name="please_complete_validation">يرجى إكمال التحقق</string>
     <string name="failed_to_connect">فشل في الاتصال</string>
+    <string name="rfid_bluetooth_closed">بلوتوث RFID مغلق. قم بتشغيل بلوتوث RFID ثم أعد الاتصال.</string>
+    <string name="connecting_reader">Connecting to the RFID</string>
+    <string name="bluetooth_not_support">Device not support bluetooth</string>
 </resources>

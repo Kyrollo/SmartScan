@@ -30,16 +30,24 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     private int scannerID;
     static MyAsyncTask cmdExecTask = null;
 
+    private volatile boolean userInitiatedConnect = false;
+
     String readerName = "RFD4031-G10B700-US";
 
     public synchronized void onCreate(Context context) {
         reader = App.get().getRfidReader();
         updateContext(context);
         scannerList = new ArrayList<>();
-        checkRFIDConnectionStatus();
+        checkRFIDConnectionStatusSilently();
     }
 
     public void checkRFIDConnectionStatus() {
+        userInitiatedConnect = true;
+        new CheckConnectionTask().execute();
+    }
+
+    public void checkRFIDConnectionStatusSilently() {
+        userInitiatedConnect = false;
         new CheckConnectionTask().execute();
     }
 
@@ -47,7 +55,9 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     private class CheckConnectionTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected void onPreExecute() {
-            handleConnecting();
+            if (userInitiatedConnect) {
+                handleConnecting();
+            }
         }
 
         @Override
@@ -82,7 +92,10 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         @Override
         protected void onPostExecute(Boolean isConnected) {
             if (isConnected) {
-                handleAlreadyConnected();
+                if (userInitiatedConnect) {
+                    handleAlreadyConnected();
+                    userInitiatedConnect = false;
+                }
             } else {
                 InitSDK();
             }
@@ -93,14 +106,14 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         Context ctx = getCurrentContext();
         if (ctx instanceof BluetoothConnectionActivity) {
             BluetoothConnectionActivity activity = (BluetoothConnectionActivity) ctx;
-            String connectedMsg = ctx.getString(R.string.rfid_connected);
-            String statusMsg = ctx.getString(R.string.rfid_is_already_connected) + (reader != null ? reader.getHostName() : "");
-            activity.sendToast(connectedMsg);
+            String statusMsg = ctx.getString(R.string.rfid_is_already_connected) + ": " + (reader != null ? reader.getHostName() : "");
             activity.updateRFIDStatus(statusMsg);
-            activity.runOnUiThread(activity::hideProgressBar);
+            String connectedMsg = ctx.getString(R.string.rfid_is_already_connected);
+            activity.sendToast(connectedMsg);
+             activity.runOnUiThread(activity::hideProgressBar);
         } else if (ctx instanceof ScanItems) {
             ScanItems activity = (ScanItems) ctx;
-            String connectedMsg = ctx.getString(R.string.rfid_connected);
+            String connectedMsg = ctx.getString(R.string.rfid_is_already_connected);
             activity.sendToast(connectedMsg);
             activity.runOnUiThread(activity::hideProgressBar);
         }
@@ -160,13 +173,18 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     private synchronized void connectReader() {
         if (!isReaderConnected()) {
             if (reader == null) {
-                new ConnectionTask().execute();
+                new ConnectionTask(userInitiatedConnect).execute();
             }
         }
     }
 
     private class ConnectionTask extends AsyncTask<Void, Void, Boolean> {
         private String errorMessage = "";
+        private final boolean showUi;
+
+        ConnectionTask(boolean showUi) {
+            this.showUi = showUi;
+        }
 
         @Override
         protected Boolean doInBackground(Void... voids) {
@@ -190,26 +208,32 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                 BluetoothConnectionActivity activity = (BluetoothConnectionActivity) ctx;
 
                 if (success) {
-                    String statusMsg = ctx.getString(R.string.connected_to) + (readerDevice != null ? readerDevice.getName() : "");
-                    activity.updateRFIDStatus(statusMsg);
-                    activity.runOnUiThread(activity::hideProgressBar);
+                        String statusMsg = ctx.getString(R.string.connected_to) + (readerDevice != null ? readerDevice.getName() : "");
+                        activity.updateRFIDStatus(statusMsg);
+                        activity.runOnUiThread(activity::hideProgressBar);
                 } else {
-                    activity.updateRFIDStatus(ctx.getString(R.string.rfid_not_connected));
-                    activity.sendToast(ctx.getString(R.string.rfid_not_connected));
-                    activity.runOnUiThread(activity::hideProgressBar);
+                        activity.updateRFIDStatus(ctx.getString(R.string.rfid_not_connected));
+                        activity.sendToast(ctx.getString(R.string.rfid_not_connected));
+                        activity.runOnUiThread(activity::hideProgressBar);
                 }
             } else if (ctx instanceof ScanItems) {
                 ScanItems activity = (ScanItems) ctx;
 
                 if (success) {
-                    String statusMsg = ctx.getString(R.string.connected_to) + (readerDevice != null ? readerDevice.getName() : "");
-                    activity.sendToast(statusMsg);
-                    activity.runOnUiThread(activity::hideProgressBar);
+                    if (showUi) {
+                        String statusMsg = ctx.getString(R.string.connected_to) + (readerDevice != null ? readerDevice.getName() : "");
+                        activity.sendToast(statusMsg);
+                        activity.runOnUiThread(activity::hideProgressBar);
+                    }
                 } else {
-                    activity.sendToast(ctx.getString(R.string.rfid_not_connected));
-                    activity.runOnUiThread(activity::hideProgressBar);
+                    if (showUi) {
+                        activity.sendToast(ctx.getString(R.string.rfid_not_connected));
+                        activity.runOnUiThread(activity::hideProgressBar);
+                    }
                 }
             }
+
+            userInitiatedConnect = false;
         }
     }
 
@@ -281,7 +305,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                         return false;
                     }
                 }
-                return true; // Already connected
+                return true;
             } catch (InvalidUsageException e) {
                 e.printStackTrace();
                 Log.e(TAG, "InvalidUsageException: " + e.getMessage());
@@ -371,7 +395,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                 Context oldContext = this.context;
                 this.context = context;
                 Log.d(TAG, "Context updated from: " + (oldContext != null ? oldContext.getClass().getSimpleName() : "null") +
-                           " to: " + context.getClass().getSimpleName());
+                        " to: " + context.getClass().getSimpleName());
 
                 if (cmdExecTask != null && !cmdExecTask.isCancelled()) {
                     cmdExecTask.cancel(true);
@@ -472,6 +496,16 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     }
 
     private synchronized void dispose() {
+        Context ctx = getCurrentContext();
+        // Notify UI that disconnection is starting
+        if (ctx instanceof BluetoothConnectionActivity) {
+            BluetoothConnectionActivity activity = (BluetoothConnectionActivity) ctx;
+            activity.updateRFIDStatus(ctx.getString(R.string.disconnecting_reader));
+        } else if (ctx instanceof ScanItems) {
+            ScanItems activity = (ScanItems) ctx;
+            // Can add status update for ScanItems if needed
+        }
+
         disconnect();
         try {
             if (reader != null) {
@@ -485,18 +519,28 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     }
 
     public synchronized void performInventory() {
+        if (reader == null || !reader.isConnected()) {
+            Log.w(TAG, "Cannot perform inventory - reader not connected");
+            return;
+        }
+
         try {
             reader.Actions.Inventory.perform();
         } catch (InvalidUsageException | OperationFailureException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error performing inventory: " + e.getMessage(), e);
         }
     }
 
     public synchronized void stopInventory() {
+        if (reader == null || !reader.isConnected()) {
+            Log.w(TAG, "Cannot stop inventory - reader not connected");
+            return;
+        }
+
         try {
             reader.Actions.Inventory.stop();
         } catch (InvalidUsageException | OperationFailureException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error stopping inventory: " + e.getMessage(), e);
         }
     }
 
@@ -533,12 +577,22 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     public class EventHandler implements RfidEventsListener {
         public void eventReadNotify(RfidReadEvents e) {
             TagData[] myTags = reader.Actions.getReadTags(100);
-            if (myTags != null) {
-                for (TagData tag : myTags) {
+            if (myTags != null && myTags.length > 0) {
+                // Create a defensive copy to avoid concurrent modification
+                TagData[] tagsCopy = new TagData[myTags.length];
+                System.arraycopy(myTags, 0, tagsCopy, 0, myTags.length);
+
+                for (TagData tag : tagsCopy) {
                     Log.d(TAG, "Tag ID: " + tag.getTagID() + " RSSI value " + tag.getPeakRSSI());
-                    Log.d(TAG, "Context: " + getCurrentContext());
                 }
-                new AsyncDataUpdate().execute(myTags);
+
+                Context ctx = getCurrentContext();
+                if (ctx != null) {
+                    Log.d(TAG, "Context: " + ctx.getClass().getSimpleName());
+                    new AsyncDataUpdate().execute(tagsCopy);
+                } else {
+                    Log.w(TAG, "Context is null, skipping tag update");
+                }
             }
         }
 
@@ -548,11 +602,16 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
 
             if (rfidStatusEvents.StatusEventData.getStatusEventType() == STATUS_EVENT_TYPE.HANDHELD_TRIGGER_EVENT) {
                 Context ctx = getCurrentContext();
+                if (ctx == null) {
+                    Log.w(TAG, "Context is null, cannot handle trigger event");
+                    return;
+                }
+
                 boolean isPressed = rfidStatusEvents.StatusEventData.HandheldTriggerEventData.getHandheldEvent() ==
-                                   HANDHELD_TRIGGER_EVENT_TYPE.HANDHELD_TRIGGER_PRESSED;
+                        HANDHELD_TRIGGER_EVENT_TYPE.HANDHELD_TRIGGER_PRESSED;
 
                 Log.d(TAG, isPressed ? "HANDHELD_TRIGGER_PRESSED" : "HANDHELD_TRIGGER_RELEASED");
-                Log.d(TAG, "Context: " + (ctx != null ? ctx.getClass().getSimpleName() : "null"));
+                Log.d(TAG, "Context: " + ctx.getClass().getSimpleName());
 
                 if (ctx instanceof BluetoothConnectionActivity) {
                     BluetoothConnectionActivity activity = (BluetoothConnectionActivity) ctx;
@@ -583,13 +642,38 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     private class AsyncDataUpdate extends AsyncTask<TagData[], Void, Void> {
         @Override
         protected Void doInBackground(TagData[]... params) {
+            if (params == null || params.length == 0) {
+                return null;
+            }
+
             Context ctx = getCurrentContext();
-            if (ctx instanceof BluetoothConnectionActivity) {
-                ((BluetoothConnectionActivity) ctx).handleTagdata(params);
-            } else if (ctx instanceof ScanItems) {
-                ((ScanItems) ctx).handleTagdata(params);
+            if (ctx == null) {
+                Log.w(TAG, "Context is null in AsyncDataUpdate");
+                return null;
+            }
+
+            try {
+                if (ctx instanceof BluetoothConnectionActivity) {
+                    BluetoothConnectionActivity activity = (BluetoothConnectionActivity) ctx;
+                    if (!activity.isFinishing() && !activity.isDestroyed()) {
+                        activity.handleTagdata(params);
+                    }
+                } else if (ctx instanceof ScanItems) {
+                    ScanItems activity = (ScanItems) ctx;
+                    if (!activity.isFinishing() && !activity.isDestroyed()) {
+                        activity.handleTagdata(params);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating tag data: " + e.getMessage(), e);
             }
             return null;
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            Log.d(TAG, "AsyncDataUpdate cancelled");
         }
     }
 
@@ -627,5 +711,6 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         void handleTagdata(TagData[][] tagDataArray);
         void handleTriggerPress(boolean pressed);
         void sendToast(String val);
+        void onConnectionStatusChanged(boolean isConnected, boolean isFailed);
     }
 }

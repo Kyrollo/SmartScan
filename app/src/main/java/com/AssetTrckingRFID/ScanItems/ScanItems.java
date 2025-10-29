@@ -45,8 +45,6 @@ import com.google.android.material.tabs.TabLayout;
 import com.zebra.rfid.api3.TagData;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -91,8 +89,10 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     private final List<Inventory> emptyListForAdapter = new ArrayList<>();
 
     private Inventory randomInventory;
+    private int lastSelectedTabIndex = 2;
 
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
+    private static final int REQUEST_ENABLE_BLUETOOTH = 400;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 200;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_WRITE_STORAGE = 300;
@@ -101,6 +101,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     private AlertDialog.Builder builder;
     AlertDialog dialog;
+    private int process = 0;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -115,16 +116,18 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
         addMissing();
 
-        initializeRfid();
         initializeTabs();
         buttonEnd();
+        initializeRfid();
     }
 
     private void addMissing() { new AddMissingTask().execute(); }
 
     private class AddMissingTask extends AsyncTask<Void, Void, Void> {
         @Override
-        protected void onPreExecute() { showProgressBar(); }
+        protected void onPreExecute() {
+            showProgressBar();
+        }
 
         @Override
         protected Void doInBackground(Void... voids) {
@@ -167,14 +170,12 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
         @Override
         protected void onPostExecute(Void aVoid) {
-            fetchDataFromDatabase();
             hideProgressBar();
+            fetchDataFromDatabase();
 
-            // Default to Missing tab
             openTab(2);
             missingTrx();
 
-            // Register Bluetooth state listener
             IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
             registerReceiver(bluetoothStateReceiver, filter);
         }
@@ -188,11 +189,15 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     }
 
     public void showProgressBar() {
+        process ++;
         loadingDialog.startLoadingDialog();
     }
 
     public void hideProgressBar() {
-        loadingDialog.dismissDialog();
+        process --;
+        if (process < 1){
+            loadingDialog.dismissDialog();
+        }
     }
 
     private void buttonEnd() {
@@ -214,23 +219,65 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     }
 
     private void initializeRfid() {
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (!bluetoothAdapter.isEnabled()) {
-            Toast.makeText(this, getString(R.string.bluetooth_disabled), Toast.LENGTH_SHORT).show();
-        }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
+                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT},
+                        BLUETOOTH_PERMISSION_REQUEST_CODE);
             } else {
-                showProgressBar();
-                rfidHandler.onCreate(ScanItems.this);
+                checkBluetoothAndConnect();
             }
         } else {
-            showProgressBar();
-            rfidHandler.onCreate(ScanItems.this);
+            checkBluetoothAndConnect();
         }
+    }
+
+    private void checkBluetoothAndConnect() {
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if (bluetoothAdapter == null) {
+            Toast.makeText(this, "Device doesn't support Bluetooth", Toast.LENGTH_SHORT).show();
+            hideProgressBar();
+            return;
+        }
+
+        if (!bluetoothAdapter.isEnabled()) {
+            showBluetoothDialog();
+        } else {
+            connectToRfid();
+        }
+    }
+
+    private void showBluetoothDialog() {
+        hideProgressBar();
+
+        new AlertDialog.Builder(this)
+                .setTitle("Bluetooth Required")
+                .setMessage("Bluetooth is required to connect to the RFID reader. Do you want to enable Bluetooth?")
+                .setPositiveButton("Yes", (dialog, which) -> enableBluetooth())
+                .setNegativeButton("No", (dialog, which) -> {
+                    dialog.dismiss();
+                    Toast.makeText(this, "Bluetooth is required for scanning", Toast.LENGTH_SHORT).show();
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+
+    private void enableBluetooth() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH);
+            }
+        } else {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH);
+        }
+    }
+
+    private void connectToRfid() {
+        rfidHandler.onCreate(this);
     }
 
     private void initializePage() {
@@ -267,13 +314,16 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     private void openTab(int tabPosition) {
         TabLayout.Tab tab = tabLayout.getTabAt(tabPosition);
         if (tab != null) tab.select();
+        lastSelectedTabIndex = tabPosition;
     }
 
     private void fetchDataFromDatabase() { new FetchDataFromDatabaseTask().execute(); }
 
     private class FetchDataFromDatabaseTask extends AsyncTask<Void, Void, Void> {
         @Override
-        protected void onPreExecute() { showProgressBar(); }
+        protected void onPreExecute() {
+            showProgressBar();
+        }
 
         @Override
         protected Void doInBackground(Void... voids) {
@@ -343,18 +393,18 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         FlushPendingUpdatesTask(FlushCallback cb) { this.callback = cb; }
 
         @Override
-        protected void onPreExecute() { showProgressBar(); }
+        protected void onPreExecute() {
+            showProgressBar();
+        }
 
         @Override
         protected Void doInBackground(Void... voids) {
             try {
 
-                // Found items
                 for (String barcode : new HashSet<>(pendingFoundBarcodes)) {
                     App.get().getDB().inventoryDao().updateItemStatusToFound(barcode);
                 }
 
-                // Relocated items (old -> current locationID)
                 for (Map.Entry<String, String> e : new HashMap<>(pendingRelocationOldLocationByBarcode).entrySet()) {
                     App.get().getDB().inventoryDao().updateItemMissingFound(e.getKey(), e.getValue(), locationID);
                 }
@@ -374,7 +424,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         }
     }
 
-    // Scan logic: move within sets only (no DB writes)
     public interface CheckItemCallback { void onCheckComplete(boolean result); }
 
     private void DoInventory(String tagIdRaw) {
@@ -399,13 +448,19 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         @Override
         protected Boolean doInBackground(String... params) {
             String tagId = params[0];
-            if (tagId != null && missingTagIds.remove(tagId)) {
-                registeredTagIds.add(tagId);
-                Inventory inv = tagIdToInventory.get(tagId);
-                if (inv != null && inv.getItemBarcode() != null) {
-                    pendingFoundBarcodes.add(inv.getItemBarcode());
+            synchronized (missingTagIds) {
+                if (tagId != null && missingTagIds.remove(tagId)) {
+                    synchronized (registeredTagIds) {
+                        registeredTagIds.add(tagId);
+                    }
+                    Inventory inv = tagIdToInventory.get(tagId);
+                    if (inv != null && inv.getItemBarcode() != null) {
+                        synchronized (pendingFoundBarcodes) {
+                            pendingFoundBarcodes.add(inv.getItemBarcode());
+                        }
+                    }
+                    return true;
                 }
-                return true;
             }
             return false;
         }
@@ -438,13 +493,41 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         protected void onPostExecute(Boolean result) {if (callback != null) callback.onCheckComplete(result); }
     }
 
-    private void registeredTrx() { new RenderSetTask(registeredTagIds).execute(); }
-    private void unRegisteredTrx() { new RenderSetTask(unregisteredTagIds).execute(); }
-    private void missingTrx() { new RenderSetTask(missingTagIds).execute(); }
     private void allTrx() {
-        Set<String> all = new HashSet<>(registeredTagIds);
-        all.addAll(unregisteredTagIds);
+        Set<String> all = new HashSet<>();
+
+        synchronized (registeredTagIds) {
+            all.addAll(registeredTagIds);
+        }
+        synchronized (unregisteredTagIds) {
+            all.addAll(unregisteredTagIds);
+        }
+
         new RenderSetTask(all).execute();
+    }
+
+    private void registeredTrx() {
+        Set<String> copy;
+        synchronized (registeredTagIds) {
+            copy = new HashSet<>(registeredTagIds);
+        }
+        new RenderSetTask(copy).execute();
+    }
+
+    private void unRegisteredTrx() {
+        Set<String> copy;
+        synchronized (unregisteredTagIds) {
+            copy = new HashSet<>(unregisteredTagIds);
+        }
+        new RenderSetTask(copy).execute();
+    }
+
+    private void missingTrx() {
+        Set<String> copy;
+        synchronized (missingTagIds) {
+            copy = new HashSet<>(missingTagIds);
+        }
+        new RenderSetTask(copy).execute();
     }
 
     private class RenderSetTask extends AsyncTask<Void, Void, List<Inventory>> {
@@ -555,7 +638,16 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_IMAGE_CAPTURE) {
+
+        if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, "Bluetooth Activated", Toast.LENGTH_SHORT).show();
+                connectToRfid();
+            } else {
+                hideProgressBar();
+                Toast.makeText(this, "Bluetooth not activated", Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == REQUEST_IMAGE_CAPTURE) {
             if (resultCode == RESULT_OK) {
                 if (data != null) {
                     Bitmap bitmap = data.getParcelableExtra("data");
@@ -573,6 +665,21 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                 showValidationDialog();
             }
         }
+    }
+
+    @Override
+    public void onConnectionStatusChanged(boolean isConnected, boolean isFailed) {
+        runOnUiThread(() -> {
+            if (isConnected) {
+                hideProgressBar();
+                Toast.makeText(this, getString(R.string.rfid_connected), Toast.LENGTH_SHORT).show();
+            } else if (isFailed) {
+                hideProgressBar();
+                Toast.makeText(this, getString(R.string.rfid_not_connected), Toast.LENGTH_SHORT).show();
+            } else {
+                showProgressBar();
+            }
+        });
     }
 
     private byte[] bitmapToByteArray(Bitmap bitmap) {
@@ -599,10 +706,10 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
         if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                showProgressBar();
-                rfidHandler.assignScanItemsContext(this);
+                connectToRfid();
             } else {
                 Toast.makeText(this, R.string.bluetooth_permissions_not_granted, Toast.LENGTH_SHORT).show();
+                hideProgressBar();
             }
         }
 
@@ -641,6 +748,9 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     @Override
     protected void onDestroy() {
+        process = 0;
+        hideProgressBar();
+
         rfidHandler.removeContext(this);
         super.onDestroy();
         try {
@@ -704,10 +814,11 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                     case BluetoothAdapter.STATE_OFF:
                         hideProgressBar();
                         Toast.makeText(context, getString(R.string.bluetooth_turned_off), Toast.LENGTH_SHORT).show();
+                        rfidHandler.onDestroy();
                         break;
+                    case BluetoothAdapter.STATE_TURNING_ON:
                     case BluetoothAdapter.STATE_ON:
-                        showProgressBar();
-                        rfidHandler.onCreate(ScanItems.this);
+                        connectToRfid();
                         break;
                 }
             }
