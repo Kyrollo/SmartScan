@@ -42,10 +42,8 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         setContentView(R.layout.activity_bluetooth_connection);
 
         initViews();
-
-        // Register Bluetooth state receiver
-        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-        registerReceiver(bluetoothStateReceiver, filter);
+        registerBluetoothReceiver();
+        initializeRfid();
     }
 
     private void initViews() {
@@ -57,34 +55,41 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         rfidHandler = new BluetoothHandler();
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        initializeRfid();
+        refreshConnection.setOnClickListener((v -> reconnectToRFID()));
+    }
+
+    private void registerBluetoothReceiver() {
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(bluetoothStateReceiver, filter);
     }
 
     private void initializeRfid() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, BLUETOOTH_PERMISSION_REQUEST_CODE);
+                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT},
+                        BLUETOOTH_PERMISSION_REQUEST_CODE);
             } else {
                 checkBluetoothAndConnect();
             }
         } else {
             checkBluetoothAndConnect();
         }
-
-        refreshConnection.setOnClickListener((v -> reconnectToRFID()));
     }
 
     private void checkBluetoothAndConnect() {
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
         if (bluetoothAdapter == null) {
-            Toast.makeText(this, getString(R.string.bluetooth_not_support), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Device doesn't support Bluetooth", Toast.LENGTH_SHORT).show();
+            updateRFIDStatus("Bluetooth Not Supported");
             return;
         }
 
         if (!bluetoothAdapter.isEnabled()) {
             showBluetoothDialog();
         } else {
-            connectToRFID();
+            connectToRfid();
         }
     }
 
@@ -96,6 +101,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
                 .setNegativeButton("No", (dialog, which) -> {
                     dialog.dismiss();
                     updateRFIDStatus("Bluetooth Off");
+                    Toast.makeText(this, "Bluetooth is required for scanning", Toast.LENGTH_SHORT).show();
                 })
                 .setCancelable(false)
                 .show();
@@ -113,8 +119,8 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         }
     }
 
-    private void connectToRFID() {
-//        showProgressBar();
+    private void connectToRfid() {
+        showProgressBar();
         rfidHandler.onCreate(this);
     }
 
@@ -126,6 +132,27 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         loadingDialog.dismissDialog();
     }
 
+//    private void reconnectToRFID() {
+//        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+//            showBluetoothDialog();
+//            return;
+//        }
+//
+//        showProgressBar();
+//
+//        new Thread(() -> {
+//            try {
+//                rfidHandler.disconnect();
+//                Thread.sleep(500);
+//            } catch (Exception e) {
+//            }
+//
+//            runOnUiThread(() -> {
+//                connectToRfid();
+//            });
+//        }).start();
+//    }
+
     private void reconnectToRFID() {
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             showBluetoothDialog();
@@ -133,8 +160,18 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         }
 
         showProgressBar();
-        rfidHandler.onDestroy();
-        connectToRFID();
+
+        new Thread(() -> {
+            try {
+                // Request a clean close/reset so handler can reconnect immediately
+                rfidHandler.closeAndResetConnection();
+                Thread.sleep(500);
+            } catch (Exception e) {
+                // ignore
+            }
+
+            runOnUiThread(this::connectToRfid);
+        }).start();
     }
 
     public void updateRFIDStatus(String status) {
@@ -147,10 +184,10 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
         if (requestCode == REQUEST_ENABLE_BLUETOOTH) {
             if (resultCode == RESULT_OK) {
-                Toast.makeText(this, "Bluetooth Activated", Toast.LENGTH_SHORT).show();
-                connectToRFID();
+                Toast.makeText(this, getString(R.string.bluetooth_enabled), Toast.LENGTH_SHORT).show();
+                connectToRfid();
             } else {
-                Toast.makeText(this, "Bluetooth doesn't activated", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.bluetooth_is_required_for_scanning), Toast.LENGTH_SHORT).show();
                 updateRFIDStatus("Bluetooth Off");
             }
         }
@@ -165,11 +202,14 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
         if (requestCode == BLUETOOTH_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 checkBluetoothAndConnect();
             } else {
                 Toast.makeText(this, getString(R.string.bluetooth_permissions_not_granted), Toast.LENGTH_SHORT).show();
+                updateRFIDStatus("Permission Denied");
             }
         }
 
@@ -180,8 +220,6 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
                 Toast.makeText(this, getString(R.string.camera_permission_denied), Toast.LENGTH_SHORT).show();
             }
         }
-
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
@@ -191,12 +229,9 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     }
 
     @Override
-    protected void onDestroy() {
-        rfidHandler.removeContext(this);
-        try {
-            unregisterReceiver(bluetoothStateReceiver);
-        } catch (IllegalArgumentException ignored) {}
-        super.onDestroy();
+    protected void onPostResume() {
+        super.onPostResume();
+        rfidHandler.onResume();
     }
 
     @Override
@@ -205,11 +240,13 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     }
 
     @Override
-    protected void onPostResume() {
-        super.onPostResume();
-        if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
-            rfidHandler.checkRFIDConnectionStatus();
-        }
+    protected void onDestroy() {
+        hideProgressBar();
+        rfidHandler.removeContext(this);
+        try {
+            unregisterReceiver(bluetoothStateReceiver);
+        } catch (IllegalArgumentException ignored) {}
+        super.onDestroy();
     }
 
     @Override
@@ -233,14 +270,11 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
     @Override
     public void onConnectionStatusChanged(boolean isConnected, boolean isFailed) {
         runOnUiThread(() -> {
+            hideProgressBar();
             if (isConnected) {
-                hideProgressBar();
                 Toast.makeText(this, getString(R.string.rfid_connected), Toast.LENGTH_SHORT).show();
             } else if (isFailed) {
-                hideProgressBar();
                 Toast.makeText(this, getString(R.string.rfid_not_connected), Toast.LENGTH_SHORT).show();
-            } else {
-                showProgressBar();
             }
         });
     }
@@ -255,12 +289,11 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
                     case BluetoothAdapter.STATE_OFF:
                         hideProgressBar();
                         Toast.makeText(context, getString(R.string.bluetooth_turned_off), Toast.LENGTH_SHORT).show();
-                        rfidHandler.onDestroy();
+                        updateRFIDStatus(getString(R.string.disconnected));
+                        rfidHandler.disconnect();
                         break;
-                    case BluetoothAdapter.STATE_TURNING_ON:
                     case BluetoothAdapter.STATE_ON:
-                        showProgressBar();
-                        connectToRFID();
+                        connectToRfid();
                         break;
                 }
             }

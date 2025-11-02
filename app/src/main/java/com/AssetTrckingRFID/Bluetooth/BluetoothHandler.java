@@ -1,7 +1,11 @@
 package com.AssetTrckingRFID.Bluetooth;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -16,6 +20,7 @@ import com.zebra.scannercontrol.IDcsSdkApiDelegate;
 import com.zebra.scannercontrol.SDKHandler;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderEventHandler {
     final static String TAG = "RFID_SAMPLE";
@@ -31,6 +36,15 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     static MyAsyncTask cmdExecTask = null;
 
     private volatile boolean userInitiatedConnect = false;
+    private BroadcastReceiver bluetoothStateReceiver;
+    private boolean isReceiverRegistered = false;
+    private final Object connectionGuard = new Object();
+    private volatile boolean isConnecting = false;
+    private final AtomicBoolean isTearingDown = new AtomicBoolean(false);
+    private volatile int lastBtState = BluetoothAdapter.ERROR;
+    private volatile boolean isInventoryRunning = false;
+
+
 
     String readerName = "RFD4031-G10B700-US";
 
@@ -38,12 +52,124 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         reader = App.get().getRfidReader();
         updateContext(context);
         scannerList = new ArrayList<>();
+        registerBluetoothStateReceiver();
         checkRFIDConnectionStatusSilently();
     }
 
-    public void checkRFIDConnectionStatus() {
-        userInitiatedConnect = true;
-        new CheckConnectionTask().execute();
+    private void registerBluetoothStateReceiver() {
+        if (isReceiverRegistered) return;
+
+        bluetoothStateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                    int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+                    if (state == lastBtState) return;
+                    lastBtState = state;
+
+                    if (state == BluetoothAdapter.STATE_OFF) {
+                        Log.d(TAG, "Bluetooth OFF -> teardown");
+                        handleBluetoothDisabled();
+                    } else if (state == BluetoothAdapter.STATE_ON) {
+                        Log.d(TAG, "Bluetooth ON -> reconnect (reset teardown flag)");
+                        isTearingDown.set(false);
+                        onBluetoothEnabled();
+                    }
+                }
+            }
+        };
+
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        Context ctx = getCurrentContext();
+        if (ctx != null) {
+            ctx.registerReceiver(bluetoothStateReceiver, filter);
+            isReceiverRegistered = true;
+            Log.d(TAG, "Bluetooth state receiver registered");
+        }
+    }
+
+
+    private void onBluetoothEnabled() {
+        new Thread(() -> {
+            synchronized (connectionGuard) {
+                if (isReaderConnected()) return;
+                if (isConnecting) return;
+                userInitiatedConnect = false;
+                InitSDK();
+            }
+        }).start();
+    }
+
+
+
+    private void handleBluetoothDisabled() {
+        if (!isTearingDown.compareAndSet(false, true)) {
+            Log.d(TAG, "Teardown already in progress, skipping");
+            return;
+        }
+
+        new Thread(() -> {
+            synchronized (this) {
+                try {
+                    if (isInventoryRunning) {
+                        try {
+                            if (reader != null && reader.isConnected()) {
+                                reader.Actions.Inventory.stop();
+                            }
+                        } catch (Exception e) {
+                            Log.w(TAG, "Ignoring inventory stop error during teardown: " + e.getMessage());
+                        } finally {
+                            isInventoryRunning = false;
+                        }
+                    }
+
+                    try {
+                        if (reader != null && reader.isConnected()) {
+                            reader.disconnect();
+                        }
+                    } catch (InvalidUsageException | OperationFailureException e) {
+                        Log.w(TAG, "Ignoring reader disconnect error: " + e.getMessage());
+                    } catch (Throwable t) {
+                        Log.w(TAG, "Ignoring unexpected disconnect error: " + t.getMessage());
+                    }
+
+                    reader = null;
+                    readerDevice = null;
+                    App.get().setRfidReader(null);
+
+                    try {
+                        if (readers != null) {
+                            readers.Dispose();
+                        }
+                    } catch (Throwable t) {
+                        Log.w(TAG, "Ignoring readers dispose error: " + t.getMessage());
+                    } finally {
+                        readers = null;
+                    }
+
+                    isConnecting = false;
+                    Log.d(TAG, "RFID reader teardown complete (Bluetooth off)");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error disconnecting RFID: " + e.getMessage(), e);
+                }
+            }
+        }).start();
+    }
+
+    private void unregisterBluetoothStateReceiver() {
+        if (isReceiverRegistered && bluetoothStateReceiver != null) {
+            try {
+                Context ctx = getCurrentContext();
+                if (ctx != null) {
+                    ctx.unregisterReceiver(bluetoothStateReceiver);
+                    isReceiverRegistered = false;
+                    Log.d(TAG, "Bluetooth state receiver unregistered");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error unregistering receiver: " + e.getMessage());
+            }
+        }
     }
 
     public void checkRFIDConnectionStatusSilently() {
@@ -92,10 +218,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         @Override
         protected void onPostExecute(Boolean isConnected) {
             if (isConnected) {
-                if (userInitiatedConnect) {
-                    handleAlreadyConnected();
-                    userInitiatedConnect = false;
-                }
+                handleAlreadyConnected();
             } else {
                 InitSDK();
             }
@@ -110,13 +233,15 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
             activity.updateRFIDStatus(statusMsg);
             String connectedMsg = ctx.getString(R.string.rfid_is_already_connected);
             activity.sendToast(connectedMsg);
-             activity.runOnUiThread(activity::hideProgressBar);
+            activity.runOnUiThread(activity::hideProgressBar);
         } else if (ctx instanceof ScanItems) {
             ScanItems activity = (ScanItems) ctx;
             String connectedMsg = ctx.getString(R.string.rfid_is_already_connected);
             activity.sendToast(connectedMsg);
             activity.runOnUiThread(activity::hideProgressBar);
         }
+
+        userInitiatedConnect = false;
     }
 
     private void handleConnecting() {
@@ -140,6 +265,80 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
             ConfigureReader();
             connectReader();
         }
+    }
+
+    public synchronized void closeAndResetConnection() {
+        Log.d(TAG, "closeAndResetConnection - starting");
+
+        // Cancel any pending command task
+        if (cmdExecTask != null && !cmdExecTask.isCancelled()) {
+            try {
+                cmdExecTask.cancel(true);
+            } catch (Exception ignored) {}
+            cmdExecTask = null;
+        }
+
+        // Stop inventory if running
+        try {
+            if (reader != null && reader.isConnected() && isInventoryRunning) {
+                try {
+                    reader.Actions.Inventory.stop();
+                } catch (Exception e) {
+                    Log.w(TAG, "Error stopping inventory during close: " + e.getMessage());
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Ignoring inventory-stop check error: " + t.getMessage());
+        } finally {
+            isInventoryRunning = false;
+        }
+
+        // Disconnect reader
+        try {
+            if (reader != null) {
+                try {
+                    if (reader.isConnected()) {
+                        reader.disconnect();
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Error disconnecting reader: " + e.getMessage());
+                }
+                reader = null;
+                readerDevice = null;
+                App.get().setRfidReader(null);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Ignoring reader disconnect error: " + t.getMessage());
+        }
+
+        // Dispose readers object
+        try {
+            if (readers != null) {
+                readers.Dispose();
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Ignoring readers dispose error: " + t.getMessage());
+        } finally {
+            readers = null;
+        }
+
+        // Clear SDK handler reference (close scanner session if needed externally)
+        try {
+            if (sdkHandler != null) {
+                // If specific termination is needed, add it here. For safety clear reference.
+                sdkHandler = null;
+                scannerList = null;
+                scannerID = 0;
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Ignoring sdkHandler cleanup error: " + t.getMessage());
+        }
+
+        // Reset connection flags so reconnection can proceed
+        isConnecting = false;
+        isTearingDown.set(false);
+
+        Log.d(TAG, "closeAndResetConnection - complete");
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -171,11 +370,10 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     }
 
     private synchronized void connectReader() {
-        if (!isReaderConnected()) {
-            if (reader == null) {
-                new ConnectionTask(userInitiatedConnect).execute();
-            }
-        }
+        if (isReaderConnected()) return;
+        if (isConnecting) return;
+        isConnecting = true;
+        new ConnectionTask(userInitiatedConnect).execute();
     }
 
     private class ConnectionTask extends AsyncTask<Void, Void, Boolean> {
@@ -190,50 +388,35 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         protected Boolean doInBackground(Void... voids) {
             Log.d(TAG, "ConnectionTask");
             GetAvailableReader();
-
             if (reader == null) {
                 errorMessage = getCurrentContext().getString(R.string.rfid_not_connected);
                 return false;
             }
-
             return connect();
         }
 
         @Override
         protected void onPostExecute(Boolean success) {
-            super.onPostExecute(success);
-            Context ctx = getCurrentContext();
-
-            if (ctx instanceof BluetoothConnectionActivity) {
-                BluetoothConnectionActivity activity = (BluetoothConnectionActivity) ctx;
-
-                if (success) {
+            try {
+                Context ctx = getCurrentContext();
+                if (ctx instanceof BluetoothConnectionActivity) {
+                    BluetoothConnectionActivity activity = (BluetoothConnectionActivity) ctx;
+                    if (success) {
                         String statusMsg = ctx.getString(R.string.connected_to) + (readerDevice != null ? readerDevice.getName() : "");
                         activity.updateRFIDStatus(statusMsg);
                         activity.runOnUiThread(activity::hideProgressBar);
-                } else {
+                    } else {
                         activity.updateRFIDStatus(ctx.getString(R.string.rfid_not_connected));
                         activity.sendToast(ctx.getString(R.string.rfid_not_connected));
                         activity.runOnUiThread(activity::hideProgressBar);
-                }
-            } else if (ctx instanceof ScanItems) {
-                ScanItems activity = (ScanItems) ctx;
-
-                if (success) {
-                    if (showUi) {
-                        String statusMsg = ctx.getString(R.string.connected_to) + (readerDevice != null ? readerDevice.getName() : "");
-                        activity.sendToast(statusMsg);
-                        activity.runOnUiThread(activity::hideProgressBar);
                     }
-                } else {
-                    if (showUi) {
-                        activity.sendToast(ctx.getString(R.string.rfid_not_connected));
-                        activity.runOnUiThread(activity::hideProgressBar);
-                    }
+                } else if (ctx instanceof ScanItems) {
+                    ((ScanItems) ctx).onConnectionStatusChanged(success, !success);
                 }
+            } finally {
+                isConnecting = false;
+                userInitiatedConnect = false;
             }
-
-            userInitiatedConnect = false;
         }
     }
 
@@ -242,28 +425,27 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         if (readers != null) {
             readers.attach(this);
             try {
-                if (readers.GetAvailableRFIDReaderList() != null) {
-                    availableRFIDReaderList = readers.GetAvailableRFIDReaderList();
-                    if (!availableRFIDReaderList.isEmpty()) {
-                        if (availableRFIDReaderList.size() == 1) {
-                            readerDevice = availableRFIDReaderList.get(0);
-                            reader = readerDevice.getRFIDReader();
-                        } else {
-                            for (ReaderDevice device : availableRFIDReaderList) {
-                                Log.d(TAG, "device: " + device.getName());
-                                if (device.getName().startsWith(readerName)) {
-                                    readerDevice = device;
-                                    reader = readerDevice.getRFIDReader();
-                                }
-                            }
+                availableRFIDReaderList = readers.GetAvailableRFIDReaderList();
+                if (availableRFIDReaderList != null && !availableRFIDReaderList.isEmpty()) {
+                    readerDevice = null;
+                    for (ReaderDevice device : availableRFIDReaderList) {
+                        Log.d(TAG, "device: " + device.getName());
+                        if (device.getName() != null && device.getName().startsWith(readerName)) {
+                            readerDevice = device;
+                            break;
                         }
                     }
+                    if (readerDevice == null) {
+                        readerDevice = availableRFIDReaderList.get(0);
+                    }
+                    reader = (readerDevice != null) ? readerDevice.getRFIDReader() : null;
                 }
             } catch (InvalidUsageException ie) {
                 ie.printStackTrace();
             }
         }
     }
+
 
     @Override
     public void RFIDReaderAppeared(ReaderDevice readerDevice) {
@@ -374,9 +556,9 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         }
     }
 
-    public void assignBluetoothConnectionContext(BluetoothConnectionActivity bluetoothConnectionActivity) {
-        updateContext(bluetoothConnectionActivity);
-    }
+//    public void assignBluetoothConnectionContext(BluetoothConnectionActivity bluetoothConnectionActivity) {
+//        updateContext(bluetoothConnectionActivity);
+//    }
 
     public void assignScanItemsContext(ScanItems scanItemsActivity) {
         updateContext(scanItemsActivity);
@@ -402,6 +584,10 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
                     cmdExecTask = null;
                 }
 
+                // Re-register receiver with new context
+                unregisterBluetoothStateReceiver();
+                registerBluetoothStateReceiver();
+
                 if (reader != null && reader.isConnected()) {
                     ConfigureReader();
                 }
@@ -426,6 +612,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     }
 
     public void onDestroy() {
+        unregisterBluetoothStateReceiver();
         dispose();
         App.get().setRfidReader(null);
     }
@@ -433,22 +620,28 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     public void setupScannerSDK() {
         if (sdkHandler == null) {
             sdkHandler = new SDKHandler(getCurrentContext());
-//            DCSSDKDefs.DCSSDK_RESULT result = sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_USB_CDC);
             DCSSDKDefs.DCSSDK_RESULT btResult = sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_LE);
             DCSSDKDefs.DCSSDK_RESULT btNormalResult = sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_NORMAL);
-
             Log.d(TAG, btNormalResult + " results " + btResult);
             sdkHandler.dcssdkSetDelegate(this);
 
             int notifications_mask = 0;
-            notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value;
-            notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value;
+            notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_APPEARANCE.value
+                    | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SCANNER_DISAPPEARANCE.value;
+            notifications_mask |= DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_BARCODE.value
+                    | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_ESTABLISHMENT.value
+                    | DCSSDKDefs.DCSSDK_EVENT.DCSSDK_EVENT_SESSION_TERMINATION.value;
             sdkHandler.dcssdkSubsribeForEvents(notifications_mask);
+        }
+
+        if (scannerList == null) {
+            scannerList = new ArrayList<>();
+        } else {
+            scannerList.clear();
         }
 
         if (sdkHandler != null) {
             ArrayList<DCSScannerInfo> availableScanners = (ArrayList<DCSScannerInfo>) sdkHandler.dcssdkGetAvailableScannersList();
-            scannerList.clear();
             if (availableScanners != null) {
                 scannerList.addAll(availableScanners);
             } else {
@@ -456,9 +649,9 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
             }
         }
 
-        if (reader != null) {
+        if (reader != null && scannerList != null) {
             for (DCSScannerInfo device : scannerList) {
-                if (device.getScannerName().contains(reader.getHostName())) {
+                if (device.getScannerName() != null && device.getScannerName().contains(reader.getHostName())) {
                     try {
                         sdkHandler.dcssdkEstablishCommunicationSession(device.getScannerID());
                         scannerID = device.getScannerID();
@@ -470,29 +663,29 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         }
     }
 
-    private synchronized void disconnect() {
-        Log.d(TAG, "Disconnect");
-        try {
-            if (reader != null) {
-                if (eventHandler != null)
-                    reader.Events.removeEventsListener(eventHandler);
-                if (sdkHandler != null) {
-                    sdkHandler.dcssdkTerminateCommunicationSession(scannerID);
-                    scannerList = null;
-                }
-                reader.disconnect();
+//    public synchronized void disconnect() {
+//        Log.d(TAG, "Disconnect");
+//        Context ctx = getCurrentContext();
+//        if (ctx instanceof BluetoothConnectionActivity) {
+//            ((BluetoothConnectionActivity) ctx).sendToast(ctx.getString(R.string.disconnecting_reader));
+//            ((BluetoothConnectionActivity) ctx).updateRFIDStatus(ctx.getString(R.string.disconnected));
+//        } else if (ctx instanceof ScanItems) {
+//            ((ScanItems) ctx).sendToast(ctx.getString(R.string.disconnecting_reader));
+//        }
+//        handleBluetoothDisabled();
+//    }
 
-                Context ctx = getCurrentContext();
-                if (ctx instanceof BluetoothConnectionActivity) {
-                    ((BluetoothConnectionActivity) ctx).sendToast(ctx.getString(R.string.disconnecting_reader));
-                    ((BluetoothConnectionActivity) ctx).updateRFIDStatus(ctx.getString(R.string.disconnected));
-                } else if (ctx instanceof ScanItems) {
-                    ((ScanItems) ctx).sendToast(ctx.getString(R.string.disconnecting_reader));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public synchronized void disconnect() {
+        Log.d(TAG, "Disconnect");
+        Context ctx = getCurrentContext();
+        if (ctx instanceof BluetoothConnectionActivity) {
+            ((BluetoothConnectionActivity) ctx).sendToast(ctx.getString(R.string.disconnecting_reader));
+            ((BluetoothConnectionActivity) ctx).updateRFIDStatus(ctx.getString(R.string.disconnected));
+        } else if (ctx instanceof ScanItems) {
+            ((ScanItems) ctx).sendToast(ctx.getString(R.string.disconnecting_reader));
         }
+
+        closeAndResetConnection();
     }
 
     private synchronized void dispose() {
@@ -524,23 +717,40 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
             return;
         }
 
+        if (isInventoryRunning) {
+            Log.d(TAG, "Inventory already running");
+            return;
+        }
+
         try {
             reader.Actions.Inventory.perform();
+            isInventoryRunning = true;
+            Log.d(TAG, "Inventory started");
         } catch (InvalidUsageException | OperationFailureException e) {
             Log.e(TAG, "Error performing inventory: " + e.getMessage(), e);
+            isInventoryRunning = false;
         }
     }
 
     public synchronized void stopInventory() {
         if (reader == null || !reader.isConnected()) {
             Log.w(TAG, "Cannot stop inventory - reader not connected");
+            isInventoryRunning = false;
+            return;
+        }
+
+        if (!isInventoryRunning) {
+            Log.d(TAG, "Inventory not running, nothing to stop");
             return;
         }
 
         try {
             reader.Actions.Inventory.stop();
+            isInventoryRunning = false;
+            Log.d(TAG, "Inventory stopped");
         } catch (InvalidUsageException | OperationFailureException e) {
             Log.e(TAG, "Error stopping inventory: " + e.getMessage(), e);
+            isInventoryRunning = false;
         }
     }
 

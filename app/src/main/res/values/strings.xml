@@ -124,4 +124,7 @@
     <string name="rfid_bluetooth_closed">Bluetooth RFID is closed. Turn on RFID Bluetooth and reconnect.</string>
     <string name="connecting_reader">Connecting to the RFID</string>
     <string name="bluetooth_not_support">Device not support bluetooth</string>
+    <string name="bluetooth_disabled_rfid_disconnected">Bluetooth disabled, RFID disconnected</string>
+    <string name="bluetooth_enabled">Bluetooth Enabled</string>
+    <string name="bluetooth_is_required_for_scanning">Bluetooth is required to connect the RFID</string>
 </resources>
