@@ -483,8 +483,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         loadingDialog.dismissDialog();
     }
 
-
-
     @SuppressLint("ClickableViewAccessibility")
     private void showPasswordCard() {
         View cardView = getLayoutInflater().inflate(R.layout.card_password_input, null);

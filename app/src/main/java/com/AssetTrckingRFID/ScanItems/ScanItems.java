@@ -243,7 +243,8 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         }
 
         if (!bluetoothAdapter.isEnabled()) {
-            showBluetoothDialog();
+//            showBluetoothDialog();
+            Toast.makeText(this, R.string.bluetooth_is_required_for_scanning, Toast.LENGTH_SHORT).show();
             hideProgressBar();
         } else {
             connectToRfid();
@@ -400,7 +401,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         @Override
         protected Void doInBackground(Void... voids) {
             try {
-                // Snapshot to avoid long holds and ensure consistency
                 Set<String> foundSnapshot = new HashSet<>(pendingFoundBarcodes);
                 Map<String, String> relocSnapshot = new HashMap<>(pendingRelocationOldLocationByBarcode);
 
