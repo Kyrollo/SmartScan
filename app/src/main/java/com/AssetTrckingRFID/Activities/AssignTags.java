@@ -27,7 +27,7 @@
 //
 //import com.AssetTrckingRFID.Adapters.TagAdapter;
 //import com.AssetTrckingRFID.App;
-//import com.AssetTrckingRFID.Bluetooth.BluetoothHandler;
+//import com.AssetTrckingRFID.Utilities.BluetoothHandler;
 //import com.AssetTrckingRFID.R;
 //
 //import com.AssetTrckingRFID.Tables.Item;

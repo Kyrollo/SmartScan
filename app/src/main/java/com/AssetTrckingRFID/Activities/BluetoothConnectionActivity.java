@@ -1,4 +1,4 @@
-package com.AssetTrckingRFID.Bluetooth;
+package com.AssetTrckingRFID.Activities;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.AssetTrckingRFID.Utilities.BluetoothHandler;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.Utilities.LoadingDialog;
 import com.zebra.rfid.api3.TagData;
@@ -81,15 +82,13 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (bluetoothAdapter == null) {
-            Toast.makeText(this, "Device doesn't support Bluetooth", Toast.LENGTH_SHORT).show();
-            updateRFIDStatus("Bluetooth Not Supported");
+            Toast.makeText(this, getString(R.string.not_support_bluetooth), Toast.LENGTH_SHORT).show();
+            updateRFIDStatus(getString(R.string.bluetooth_not_supported));
             return;
         }
 
         if (!bluetoothAdapter.isEnabled()) {
-//            showBluetoothDialog();
-            updateRFIDStatus("Bluetooth is Off");
-            Toast.makeText(this, R.string.bluetooth_is_required_for_scanning, Toast.LENGTH_SHORT).show();
+            showBluetoothDialog();
 
         } else {
             connectToRfid();
@@ -98,13 +97,12 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
     private void showBluetoothDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Bluetooth Required")
-                .setMessage("Bluetooth is required to connect to the RFID reader. Do you want to enable Bluetooth?")
-                .setPositiveButton("Yes", (dialog, which) -> enableBluetooth())
-                .setNegativeButton("No", (dialog, which) -> {
+                .setTitle(R.string.bluetooth_required)
+                .setMessage(R.string.message_bluetooth_permission)
+                .setPositiveButton(R.string.yes, (dialog, which) -> enableBluetooth())
+                .setNegativeButton(R.string.no, (dialog, which) -> {
                     dialog.dismiss();
-                    updateRFIDStatus("Bluetooth Off");
-                    Toast.makeText(this, "Bluetooth is required for scanning", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.bluetooth_declined, Toast.LENGTH_SHORT).show();
                 })
                 .setCancelable(false)
                 .show();
@@ -137,9 +135,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
     private void reconnectToRFID() {
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-//            showBluetoothDialog();
-            updateRFIDStatus("Bluetooth is Off");
-            Toast.makeText(this, R.string.bluetooth_is_required_for_scanning, Toast.LENGTH_SHORT).show();
+            showBluetoothDialog();
             return;
         }
 
@@ -147,7 +143,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
         new Thread(() -> {
             try {
-                rfidHandler.onDestroy();
+                rfidHandler.closeAndResetConnection();
                 Thread.sleep(500);
             } catch (Exception e) {
                 // ignore
@@ -170,7 +166,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
                 Toast.makeText(this, getString(R.string.bluetooth_enabled), Toast.LENGTH_SHORT).show();
                 connectToRfid();
             } else {
-                updateRFIDStatus("Bluetooth Off");
+                updateRFIDStatus(getString(R.string.bluetooth_off));
                 Toast.makeText(this, getString(R.string.bluetooth_is_required_for_scanning), Toast.LENGTH_SHORT).show();
             }
         }
@@ -192,7 +188,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
                 checkBluetoothAndConnect();
             } else {
                 Toast.makeText(this, getString(R.string.bluetooth_permissions_not_granted), Toast.LENGTH_SHORT).show();
-                updateRFIDStatus("Permission Denied");
+                updateRFIDStatus(getString(R.string.permission_denied));
             }
         }
 
@@ -273,7 +269,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
                         hideProgressBar();
                         Toast.makeText(context, getString(R.string.bluetooth_turned_off), Toast.LENGTH_SHORT).show();
                         updateRFIDStatus(getString(R.string.disconnected));
-                        rfidHandler.onDestroy();
+                        rfidHandler.closeAndResetConnection();
                         break;
                     case BluetoothAdapter.STATE_ON:
                         connectToRfid();

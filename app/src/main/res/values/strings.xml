@@ -127,4 +127,24 @@
     <string name="bluetooth_disabled_rfid_disconnected">Bluetooth disabled, RFID disconnected</string>
     <string name="bluetooth_enabled">Bluetooth Enabled</string>
     <string name="bluetooth_is_required_for_scanning">Bluetooth is required to connect the RFID</string>
+    <string name="photo_not_taken">Photo not taken</string>
+    <string name="image_saved">Image Saved</string>
+    <string name="save_image_failed">Failed to save image</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="bluetooth_required">Bluetooth Required</string>
+    <string name="message_bluetooth_permission">Bluetooth is required to connect to the RFID reader. Do you want to enable Bluetooth?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="bluetooth_declined">Bluetooth is required for scanning</string>
+    <string name="not_support_bluetooth">Device doesn\'t support Bluetooth</string>
+    <string name="permission_denied">Permission Denied</string>
+    <string name="bluetooth_off">Bluetooth Off</string>
+    <string name="bluetooth_not_supported">Bluetooth Not Supported</string>
+    <string name="image_path">Pictures/SmartScanImages</string>
+    <string name="image_type">image/png</string>
+    <string name="package_name">package:com.SmartScan</string>
+    <string name="userid">USERID</string>
+    <string name="inventoryid">INVENTORYID</string>
+    <string name="inventorydate">INVENTORYDATE</string>
+    <string name="locationid">locationId</string>
 </resources>

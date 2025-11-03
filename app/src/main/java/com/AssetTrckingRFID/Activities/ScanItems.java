@@ -1,4 +1,4 @@
-package com.AssetTrckingRFID.ScanItems;
+package com.AssetTrckingRFID.Activities;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -34,7 +34,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.AssetTrckingRFID.Adapters.InventoryAdapter;
 import com.AssetTrckingRFID.App;
-import com.AssetTrckingRFID.Bluetooth.BluetoothHandler;
+import com.AssetTrckingRFID.Utilities.BluetoothHandler;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.Tables.Category;
 import com.AssetTrckingRFID.Tables.Inventory;
@@ -213,10 +213,10 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     private void retrieveData() {
         Intent intent = getIntent();
-        userId = intent.getIntExtra("USERID", -1);
-        inventoryId = intent.getIntExtra("INVENTORYID", -1);
-        startDateStr = intent.getStringExtra("INVENTORYDATE");
-        locationID = intent.getStringExtra("locationId");
+        userId = intent.getIntExtra(getString(R.string.userid), -1);
+        inventoryId = intent.getIntExtra(getString(R.string.inventoryid), -1);
+        startDateStr = intent.getStringExtra(getString(R.string.inventorydate));
+        locationID = intent.getStringExtra(getString(R.string.locationid));
     }
 
     private void initializeRfid() {
@@ -237,14 +237,13 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (bluetoothAdapter == null) {
-            Toast.makeText(this, "Device doesn't support Bluetooth", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.not_support_bluetooth, Toast.LENGTH_SHORT).show();
             hideProgressBar();
             return;
         }
 
         if (!bluetoothAdapter.isEnabled()) {
-//            showBluetoothDialog();
-            Toast.makeText(this, R.string.bluetooth_is_required_for_scanning, Toast.LENGTH_SHORT).show();
+            showBluetoothDialog();
             hideProgressBar();
         } else {
             connectToRfid();
@@ -253,12 +252,12 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     private void showBluetoothDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Bluetooth Required")
-                .setMessage("Bluetooth is required to connect to the RFID reader. Do you want to enable Bluetooth?")
-                .setPositiveButton("Yes", (dialog, which) -> enableBluetooth())
-                .setNegativeButton("No", (dialog, which) -> {
+                .setTitle(R.string.bluetooth_required)
+                .setMessage(R.string.message_bluetooth_permission)
+                .setPositiveButton(R.string.yes, (dialog, which) -> enableBluetooth())
+                .setNegativeButton(R.string.no, (dialog, which) -> {
                     dialog.dismiss();
-                    Toast.makeText(this, "Bluetooth is required for scanning", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.bluetooth_declined, Toast.LENGTH_SHORT).show();
                 })
                 .setCancelable(false)
                 .show();
@@ -571,7 +570,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                 getString(R.string.item_description) + item.getItemDesc() + "\n\n" +
                 getString(R.string.item_opt3) + item.getOpt3());
 
-        builder.setPositiveButton("Take Photo", (dialog, which) -> {
+        builder.setPositiveButton(R.string.take_photo, (dialog, which) -> {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
             } else {
@@ -588,7 +587,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
                 try {
-                    Uri uri = Uri.parse("package:com.SmartScan");
+                    Uri uri = Uri.parse(getString(R.string.package_name));
                     Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri);
                     startActivity(intent);
                 } catch (Exception e) {
@@ -602,17 +601,17 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     private void saveBitmapToFolder(Bitmap bitmap) {
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.DISPLAY_NAME, "IMG_" + System.currentTimeMillis() + ".png");
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
-        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SmartScanImages");
+        values.put(MediaStore.Images.Media.MIME_TYPE, getString(R.string.image_type));
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, getString(R.string.image_path));
 
         Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
         if (uri != null) {
             try (OutputStream out = getContentResolver().openOutputStream(uri)) {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-                Toast.makeText(this, "Image Saved", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.image_saved, Toast.LENGTH_SHORT).show();
             } catch (IOException e) {
                 e.printStackTrace();
-                Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.save_image_failed, Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -643,7 +642,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                     showValidationDialog();
                 }
             } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Photo not taken", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.photo_not_taken, Toast.LENGTH_SHORT).show();
                 showValidationDialog();
             }
         }
@@ -809,7 +808,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
                     case BluetoothAdapter.STATE_OFF:
                         hideProgressBar();
                         Toast.makeText(context, getString(R.string.bluetooth_turned_off), Toast.LENGTH_SHORT).show();
-                        rfidHandler.onDestroy();
+                        rfidHandler.closeAndResetConnection();
                         break;
                     case BluetoothAdapter.STATE_ON:
                         connectToRfid();

@@ -39,19 +39,19 @@
             android:name=".Activities.LocationActivity"
             android:exported="false" />
         <activity
-            android:name=".Bluetooth.BluetoothConnectionActivity"
+            android:name=".Activities.BluetoothConnectionActivity"
             android:exported="false" />
         <activity
             android:name=".Activities.ServerConfigActivity"
             android:exported="false" />
         <activity
-            android:name=".ScanItems.ScanItems"
+            android:name=".Activities.ScanItems"
             android:exported="false" />
         <activity
             android:name=".Activities.HomeActivity"
             android:exported="false" />
         <activity
-            android:name=".Activities.MainActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

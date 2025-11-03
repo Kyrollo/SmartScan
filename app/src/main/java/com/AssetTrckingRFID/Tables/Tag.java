@@ -1,4 +1,4 @@
-package com.AssetTrckingRFID.Assign;
+package com.AssetTrckingRFID.Tables;
 
 public class Tag {
     private String itemBarcode;

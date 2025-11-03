@@ -8,7 +8,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.AssetTrckingRFID.Assign.Tag;
+import com.AssetTrckingRFID.Tables.Tag;
 import com.AssetTrckingRFID.R;
 
 import java.util.List;

@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.R;
-import com.AssetTrckingRFID.ScanItems.ScanItems;
 import com.AssetTrckingRFID.Tables.Location;
 
 import java.util.ArrayList;

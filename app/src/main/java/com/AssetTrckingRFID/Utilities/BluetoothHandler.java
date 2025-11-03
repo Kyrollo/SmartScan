@@ -1,4 +1,4 @@
-package com.AssetTrckingRFID.Bluetooth;
+package com.AssetTrckingRFID.Utilities;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -9,9 +9,10 @@ import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.AssetTrckingRFID.Activities.BluetoothConnectionActivity;
 import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.R;
-import com.AssetTrckingRFID.ScanItems.ScanItems;
+import com.AssetTrckingRFID.Activities.ScanItems;
 import com.zebra.rfid.api3.*;
 import com.zebra.scannercontrol.DCSSDKDefs;
 import com.zebra.scannercontrol.DCSScannerInfo;
@@ -471,7 +472,7 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         }
     }
 
-    private synchronized boolean connect() {
+    private boolean connect() {
         if (reader != null) {
             Log.d(TAG, "connect " + reader.getHostName());
             try {
@@ -480,8 +481,19 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
 
                     if (reader.isConnected()) {
                         ConfigureReader();
-                        setupScannerSDK();
                         App.get().setRfidReader(reader);
+
+                        Context ctx = getCurrentContext();
+                        if (ctx != null) {
+                            if (ctx instanceof BluetoothConnectionActivity) {
+                                ((BluetoothConnectionActivity) ctx).runOnUiThread(this::setupScannerSDK);
+                            } else if (ctx instanceof ScanItems) {
+                                ((ScanItems) ctx).runOnUiThread(this::setupScannerSDK);
+                            }
+                        } else {
+                            Log.w(TAG, "Context is null, skipping scanner SDK setup");
+                        }
+
                         return true;
                     } else {
                         return false;
@@ -618,8 +630,16 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
     }
 
     public void setupScannerSDK() {
+        Context ctx = getCurrentContext();
+        if (ctx == null) {
+            Log.e(TAG, "Cannot setup scanner SDK - context is null");
+            return;
+        }
+
+        Context appContext = ctx.getApplicationContext();
+
         if (sdkHandler == null) {
-            sdkHandler = new SDKHandler(getCurrentContext());
+            sdkHandler = new SDKHandler(appContext);
             DCSSDKDefs.DCSSDK_RESULT btResult = sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_LE);
             DCSSDKDefs.DCSSDK_RESULT btNormalResult = sdkHandler.dcssdkSetOperationalMode(DCSSDKDefs.DCSSDK_MODE.DCSSDK_OPMODE_BT_NORMAL);
             Log.d(TAG, btNormalResult + " results " + btResult);
@@ -662,18 +682,6 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
             }
         }
     }
-
-//    public synchronized void disconnect() {
-//        Log.d(TAG, "Disconnect");
-//        Context ctx = getCurrentContext();
-//        if (ctx instanceof BluetoothConnectionActivity) {
-//            ((BluetoothConnectionActivity) ctx).sendToast(ctx.getString(R.string.disconnecting_reader));
-//            ((BluetoothConnectionActivity) ctx).updateRFIDStatus(ctx.getString(R.string.disconnected));
-//        } else if (ctx instanceof ScanItems) {
-//            ((ScanItems) ctx).sendToast(ctx.getString(R.string.disconnecting_reader));
-//        }
-//        handleBluetoothDisabled();
-//    }
 
     public synchronized void disconnect() {
         Log.d(TAG, "Disconnect");

@@ -1,4 +1,4 @@
-package com.AssetTrckingRFID.Activities;
+package com.AssetTrckingRFID;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,8 +11,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.AssetTrckingRFID.App;
-import com.AssetTrckingRFID.R;
+import com.AssetTrckingRFID.Activities.HomeActivity;
+import com.AssetTrckingRFID.Activities.ServerConfigActivity;
 import com.AssetTrckingRFID.Tables.Users;
 
 
