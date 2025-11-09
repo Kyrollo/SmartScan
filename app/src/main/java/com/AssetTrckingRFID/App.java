@@ -50,7 +50,7 @@ public class App extends Application {
         SharedPreferences.Editor edit = getSP().edit();
         edit.putString(SERVER_IP, serverIP);
         edit.putString(PORT_NO, portNo);
-        edit.apply();
+        edit.commit();
     }
 
     public String getServerIP() {

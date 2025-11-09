@@ -76,6 +76,8 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private String startDateStr;
     private int userId, inventoryId;
     private boolean isUploadItems = false, isUploadInventories = false;
+    private volatile int uploadCallbacksReceived = 0;
+    private volatile int expectedCallbacks = 0;
     private LoadingDialog loadingDialog;
     private BluetoothHandler rfidHandler;
 
@@ -394,12 +396,15 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             Toast.makeText(this, getString(R.string.no_internet_connection), Toast.LENGTH_LONG).show();
             return;
         }
+
+        showProgressBar();
+
         apiService.testConnection().enqueue(new Callback<String>() {
             @Override
             public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
+                hideProgressBar();
                 if (response.isSuccessful() && "Success".equals(response.body())) {
                     onSuccess.run();
-                    Toast.makeText(getApplicationContext(), getString(R.string.connection_succeeded), Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
                 }
@@ -407,6 +412,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
             @Override
             public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
+                hideProgressBar();
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
@@ -548,126 +554,142 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
 
-        List<Item> allItems = App.get().getDB().itemDao().getAllItems();
-        if (allItems.isEmpty()) {
-            Toast.makeText(getApplicationContext(), getString(R.string.no_data_to_upload), Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        showProgressBar();
-
-        upload();
-    }
-
-    private void upload() {
-        isUploadItems = false;
-        isUploadInventories = false;
+        runOnUiThread(this::showProgressBar);
 
         new Thread(() -> {
             List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
             List<Item> allItems = App.get().getDB().itemDao().getAllItems();
 
-            runOnUiThread(() -> {
-                if (!allInventory.isEmpty()) {
-                    uploadInventory();
-                }
-                if (!allItems.isEmpty()) {
-                    uploadItems();
-                } else {
+            if (allInventory.isEmpty() && allItems.isEmpty()) {
+                runOnUiThread(() -> {
                     hideProgressBar();
                     Toast.makeText(getApplicationContext(), getString(R.string.no_data_to_upload), Toast.LENGTH_LONG).show();
+                });
+                return;
+            }
+
+            // Reset flags on background thread
+            isUploadItems = false;
+            isUploadInventories = false;
+            uploadCallbacksReceived = 0;
+            expectedCallbacks = 0;
+
+            // Process data on background thread
+            boolean hasInventory = !allInventory.isEmpty();
+            boolean hasItems = !allItems.isEmpty();
+
+            if (hasInventory) {
+                expectedCallbacks++;
+            } else {
+                isUploadInventories = true;
+            }
+
+            if (hasItems) {
+                expectedCallbacks++;
+            } else {
+                isUploadItems = true;
+            }
+
+            // Prepare upload data on background thread
+            List<UploadInventory> uploadInventoryData = null;
+            List<UploadItems> uploadItemsData = null;
+
+            if (hasInventory) {
+                uploadInventoryData = new ArrayList<>(allInventory.size());
+                for (Inventory inventory : allInventory) {
+                    uploadInventoryData.add(new UploadInventory(
+                        inventory.getInventoryID(), inventory.getInventoryDate(), inventory.getUserID(),
+                        inventory.getItemID(), inventory.getItemBarcode(), inventory.getRemark(),
+                        inventory.getCategoryId(), inventory.getCategoryDesc(), inventory.getStatusID(),
+                        inventory.getLocationID(), inventory.getLocationDesc(), inventory.getFullLocationDesc(),
+                        inventory.isScanned(), inventory.isMissing(), inventory.isManual(),
+                        inventory.isReallocated(), inventory.getOldLocationID(), inventory.getOldLocationDesc(),
+                        inventory.getOldFullLocationDesc(), inventory.isStatusUpdated(),
+                        inventory.isReallocatedApplied(), inventory.isStatusApplied(),
+                        inventory.isMissingApplied(), inventory.IsChecked(), inventory.isRegistered(),
+                        inventory.getCreatedBy(), inventory.getCreationDate(), inventory.getModifiedBy(),
+                        inventory.getModificationDate(), inventory.getReasonID()));
+                }
+            }
+
+            if (hasItems) {
+                uploadItemsData = new ArrayList<>(allItems.size());
+                for (Item item : allItems) {
+                    uploadItemsData.add(new UploadItems(
+                        item.ItemID, item.getItemBarCode(), item.getItemBarcodeAbb(),
+                        item.getItemDesc(), item.getItemSN(), item.getVendorID(),
+                        item.getInsurerID(), item.getPurchaseDate(), item.getWarrentyPeriod(),
+                        item.getCategoryID(), item.getLocationID(), item.getStatusID(),
+                        item.getItemCost(), item.getItemPrice(), item.getPONumber(),
+                        item.getItemLifeTime(), item.getItemUsagePeriod(), item.getItemSalvage(),
+                        item.getFactor(), item.getItemFirstInventoryDate(),
+                        item.getItemLastInventoryDate(), item.getItemQty(), item.getRemark(),
+                        item.getOpt1(), item.getOpt2(), item.getOpt3()));
+                }
+            }
+
+            // Start uploads on main thread
+            List<UploadInventory> finalInventoryData = uploadInventoryData;
+            List<UploadItems> finalItemsData = uploadItemsData;
+
+            runOnUiThread(() -> {
+                if (finalInventoryData != null) {
+                    uploadInventoryDirect(finalInventoryData);
+                }
+                if (finalItemsData != null) {
+                    uploadItemsDirect(finalItemsData);
+                }
+                if (!hasInventory && !hasItems) {
+                    checkUploadCompletion();
                 }
             });
         }).start();
     }
 
-    private  void printUploadMessage() {
-        if (isUploadItems) {
-            Toast.makeText(getApplicationContext(), getString(R.string.data_uploaded_successfully), Toast.LENGTH_LONG).show();
-        } else {
-            Toast.makeText(getApplicationContext(), getString(R.string.failed_to_upload_data), Toast.LENGTH_LONG).show();
-        }
+    private void uploadItemsDirect(List<UploadItems> uploadData) {
+        apiService.uploadAssignedAssetsTag(uploadData).enqueue(new retrofit2.Callback<String>() {
+            @Override
+            public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
+                isUploadItems = response.isSuccessful() && "Success".equals(response.body());
+                checkUploadCompletion();
+            }
 
-        hideProgressBar();
+            @Override
+            public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
+                isUploadItems = false;
+                checkUploadCompletion();
+            }
+        });
     }
 
-    private List<UploadItems> getItemsUpload (){
-        List<Item> allItems = App.get().getDB().itemDao().getAllItems();
-        List <UploadItems> uploadData = new ArrayList<>();
-        for (Item item : allItems) {
-            UploadItems uploadItem = new UploadItems(item.ItemID,item.getItemBarCode(), item.getItemBarcodeAbb(),
-                    item.getItemDesc(), item.getItemSN(), item.getVendorID(),item.getInsurerID(), item.getPurchaseDate(),
-                    item.getWarrentyPeriod(), item.getCategoryID(), item.getLocationID(), item.getStatusID(),
-                    item.getItemCost(), item.getItemPrice(), item.getPONumber(), item.getItemLifeTime(), item.getItemUsagePeriod(),
-                    item.getItemSalvage(), item.getFactor(), item.getItemFirstInventoryDate(), item.getItemLastInventoryDate(),
-                    item.getItemQty(), item.getRemark(), item.getOpt1(), item.getOpt2(), item.getOpt3());
-            uploadData.add(uploadItem);
-        }
-        return uploadData;
+    private void uploadInventoryDirect(List<UploadInventory> uploadData) {
+        apiService.uploadInventory(uploadData).enqueue(new retrofit2.Callback<String>() {
+            @Override
+            public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
+                isUploadInventories = response.isSuccessful() && "Success".equals(response.body());
+                checkUploadCompletion();
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
+                isUploadInventories = false;
+                checkUploadCompletion();
+            }
+        });
     }
 
-    private List<UploadInventory> getInevntoryUpload (){
-        List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
-        List <UploadInventory> uploadData = new ArrayList<>();
-        for (Inventory inventory : allInventory) {
-            UploadInventory uploadItem = new UploadInventory(inventory.getInventoryID(), inventory.getInventoryDate(), inventory.getUserID(),
-                    inventory.getItemID(), inventory.getItemBarcode(), inventory.getRemark(), inventory.getCategoryId(),
-                    inventory.getCategoryDesc(), inventory.getStatusID(), inventory.getLocationID(), inventory.getLocationDesc(),
-                    inventory.getFullLocationDesc(), inventory.isScanned(), inventory.isMissing(), inventory.isManual(), inventory.isReallocated(),
-                    inventory.getOldLocationID(), inventory.getOldLocationDesc(), inventory.getOldFullLocationDesc(), inventory.isStatusUpdated(),
-                    inventory.isReallocatedApplied(), inventory.isStatusApplied(), inventory.isMissingApplied(), inventory.IsChecked(),
-                    inventory.isRegistered(), inventory.getCreatedBy(), inventory.getCreationDate(), inventory.getModifiedBy(),
-                    inventory.getModificationDate(), inventory.getReasonID());
-            uploadData.add(uploadItem);
-        }
-        return uploadData;
-    }
+    private synchronized void checkUploadCompletion() {
+        uploadCallbacksReceived++;
 
-    private void uploadItems() {
-        new Thread(() -> {
-            List<UploadItems> itemsUpload = getItemsUpload();
-            runOnUiThread(() -> apiService.uploadAssignedAssetsTag(itemsUpload).enqueue(new Callback<String>() {
-                @Override
-                public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
-                    if (response.isSuccessful() && "Success".equals(response.body())) {
-                        isUploadItems = true;
-                    }
-                    checkUploadCompletion();
+        if (uploadCallbacksReceived >= expectedCallbacks) {
+            runOnUiThread(() -> {
+                hideProgressBar();
+                if (isUploadItems || isUploadInventories) {
+                    Toast.makeText(getApplicationContext(), getString(R.string.data_uploaded_successfully), Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), getString(R.string.failed_to_upload_data), Toast.LENGTH_LONG).show();
                 }
-
-                @Override
-                public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
-                    Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_uploading), Toast.LENGTH_LONG).show();
-                    hideProgressBar();
-                }
-            }));
-        }).start();
-    }
-
-    private void uploadInventory() {
-        new Thread(() -> {
-            List<UploadInventory> inventoryUpload = getInevntoryUpload();
-            runOnUiThread(() -> apiService.uploadInventory(inventoryUpload).enqueue(new Callback<String>() {
-                @Override
-                public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
-                    if (response.isSuccessful() && "Success".equals(response.body())) {
-                        isUploadInventories = true;
-                    }
-                    checkUploadCompletion();
-                }
-
-                @Override
-                public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
-                    Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_uploading), Toast.LENGTH_LONG).show();
-                    hideProgressBar();
-                }
-            }));
-        }).start();
-    }
-
-    private void checkUploadCompletion() {
-        if (isUploadItems || isUploadInventories) {
-            printUploadMessage();
+            });
         }
     }
 
@@ -716,6 +738,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        try {
+            unregisterReceiver(bluetoothStateReceiver);
+        } catch (IllegalArgumentException ignored) {}
+        super.onDestroy();
+    }
+
     public static class NetworkUtils {
         public static boolean isNetworkConnected(Context context) {
             ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -724,18 +754,17 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        apiService = Retrofit.getRetrofit().create(APIService.class);
+    }
+
     private void registerBluetoothReceiver() {
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(bluetoothStateReceiver, filter);
     }
 
-    @Override
-    protected void onDestroy() {
-        try {
-            unregisterReceiver(bluetoothStateReceiver);
-        } catch (IllegalArgumentException ignored) {}
-        super.onDestroy();
-    }
 
     private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
         @Override
