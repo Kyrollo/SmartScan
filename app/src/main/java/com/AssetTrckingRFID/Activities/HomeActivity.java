@@ -1,8 +1,11 @@
 package com.AssetTrckingRFID.Activities;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -18,7 +21,6 @@ import android.view.View;
 
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -43,19 +45,20 @@ import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.MainActivity;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.Tables.*;
+import com.AssetTrckingRFID.Utilities.BluetoothHandler;
 import com.AssetTrckingRFID.Utilities.LoadingDialog;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
-    private Toolbar toolbar;
     private TextView sessionName, startDate, endDate;
     private Button btnStart;
     private DrawerLayout drawerLayout;
@@ -66,15 +69,15 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private List<LocationResponse> locations;
     private List<StatusResponse> allStatus;
     private List<InventoryH_Response> inventoriesH;
-    private FrameLayout progressBarDownload;
-    private ProgressBar progressBar, progressBarUpload;
+    private ProgressBar progressBar;
     private TextView tvStatus;
-    private Handler handler = new Handler();
+    private final Handler handler = new Handler();
     private int progress = 0;
-    private String username, startDateStr;
+    private String startDateStr;
     private int userId, inventoryId;
     private boolean isUploadItems = false, isUploadInventories = false;
     private LoadingDialog loadingDialog;
+    private BluetoothHandler rfidHandler;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -85,22 +88,23 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         initViews();
         setupNavigationDrawer();
         setupLanguageSwitching();
+        registerBluetoothReceiver();
 
         updateSessionData();
     }
 
     private void initViews() {
-        toolbar = findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setTitle("");
+        Objects.requireNonNull(getSupportActionBar()).setTitle("");
         sessionName = findViewById(R.id.sessionName);
         startDate = findViewById(R.id.startDate);
         endDate = findViewById(R.id.endDate);
         btnStart = findViewById(R.id.btnStart);
         progressBar = findViewById(R.id.progressBar);
         tvStatus = findViewById(R.id.tvStatus);
-        progressBarDownload = findViewById(R.id.progressBarDownload);
-        progressBarUpload = findViewById(R.id.progressBarUpload);
+
+        rfidHandler = new BluetoothHandler();
 
         loadingDialog = new LoadingDialog(this);
 
@@ -122,7 +126,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
     private void updateSessionData() {
         List<InventoryH> inventoryHS = App.get().getDB().inventoryH_dao().getAllInventoryHs();
-        if (inventoryHS.size() > 0) {
+        if (!inventoryHS.isEmpty()) {
             InventoryH inventoryH = inventoryHS.get(0);
             sessionName.setText(inventoryH.getInventoryName());
             startDate.setText(inventoryH.getStartDate().replace("T00:00:00",""));
@@ -144,6 +148,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private void setupNavigationDrawer() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -158,7 +163,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         // Retrieve the username from the intent
         Intent intent = getIntent();
-        username = intent.getStringExtra("USERNAME");
+        String username = intent.getStringExtra("USERNAME");
         userId = intent.getIntExtra("USERID", -1);
 
         // Find the TextView and set the username
@@ -192,23 +197,13 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         DisplayMetrics dm = resources.getDisplayMetrics();
         resources.updateConfiguration(config, dm);
 
-        // Restart the current activity
-//        Intent intent = getIntent();
-//        username = intent.getStringExtra("USERNAME");
-//        userId = intent.getIntExtra("USERID", -1);
-//        intent.putExtra("USERNAME", username);
-//        intent.putExtra("PASSWORD", userId);
-//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-//        startActivity(intent);
-//        finish();
-
         recreate();
     }
 
     private void fetchItems() {
         apiService.getItems().enqueue(new Callback<List<ItemResponse>>() {
             @Override
-            public void onResponse(Call<List<ItemResponse>> call, Response<List<ItemResponse>> response) {
+            public void onResponse(@NonNull Call<List<ItemResponse>> call, @NonNull Response<List<ItemResponse>> response) {
                 if (response.isSuccessful()) {
                     items = response.body();
                     if (items != null) {
@@ -220,7 +215,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
 
             @Override
-            public void onFailure(Call<List<ItemResponse>> call, Throwable t) {
+            public void onFailure(@NonNull Call<List<ItemResponse>> call, @NonNull Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
@@ -252,7 +247,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void fetchCategories() {
         apiService.getCategories().enqueue(new Callback<List<CategoryResponse>>() {
             @Override
-            public void onResponse(Call<List<CategoryResponse>> call, Response<List<CategoryResponse>> response) {
+            public void onResponse(@NonNull Call<List<CategoryResponse>> call, @NonNull Response<List<CategoryResponse>> response) {
                 if (response.isSuccessful()) {
                     categories = response.body();
                     if (categories != null) {
@@ -264,7 +259,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
 
             @Override
-            public void onFailure(Call<List<CategoryResponse>> call, Throwable t) {
+            public void onFailure(@NonNull Call<List<CategoryResponse>> call, @NonNull Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
@@ -281,7 +276,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void fetchLocations() {
         apiService.getLocation().enqueue(new Callback<List<LocationResponse>>() {
             @Override
-            public void onResponse(Call<List<LocationResponse>> call, Response<List<LocationResponse>> response) {
+            public void onResponse(@NonNull Call<List<LocationResponse>> call, @NonNull Response<List<LocationResponse>> response) {
                 if (response.isSuccessful()) {
                     locations = response.body();
                     if (locations != null) {
@@ -293,7 +288,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
 
             @Override
-            public void onFailure(Call<List<LocationResponse>> call, Throwable t) {
+            public void onFailure(@NonNull Call<List<LocationResponse>> call, @NonNull Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
@@ -311,7 +306,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void fetchStatus() {
         apiService.getStatus().enqueue(new Callback<List<StatusResponse>>() {
             @Override
-            public void onResponse(Call<List<StatusResponse>> call, Response<List<StatusResponse>> response) {
+            public void onResponse(@NonNull Call<List<StatusResponse>> call, @NonNull Response<List<StatusResponse>> response) {
                 if (response.isSuccessful()) {
                     allStatus = response.body();
                     if (allStatus != null) {
@@ -323,7 +318,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
 
             @Override
-            public void onFailure(Call<List<StatusResponse>> call, Throwable t) {
+            public void onFailure(@NonNull Call<List<StatusResponse>> call, @NonNull Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
@@ -340,7 +335,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void fetchInventoryH() {
         apiService.getInventoryH().enqueue(new Callback<List<InventoryH_Response>>() {
             @Override
-            public void onResponse(Call<List<InventoryH_Response>> call, Response<List<InventoryH_Response>> response) {
+            public void onResponse(@NonNull Call<List<InventoryH_Response>> call, @NonNull Response<List<InventoryH_Response>> response) {
                 if (response.isSuccessful()) {
                     inventoriesH = response.body();
                     if (inventoriesH != null) {
@@ -352,7 +347,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
 
             @Override
-            public void onFailure(Call<List<InventoryH_Response>> call, Throwable t) {
+            public void onFailure(@NonNull Call<List<InventoryH_Response>> call, @NonNull Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
@@ -371,7 +366,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void fetchUsers() {
         apiService.getUsers().enqueue(new Callback<List<Users>>() {
             @Override
-            public void onResponse(Call<List<Users>> call, Response<List<Users>> response) {
+            public void onResponse(@NonNull Call<List<Users>> call, @NonNull Response<List<Users>> response) {
                 if (response.isSuccessful()) {
                     users = response.body();
                     insertUsers();
@@ -381,7 +376,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
 
             @Override
-            public void onFailure(Call<List<Users>> call, Throwable t) {
+            public void onFailure(@NonNull Call<List<Users>> call, @NonNull Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
@@ -401,7 +396,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         }
         apiService.testConnection().enqueue(new Callback<String>() {
             @Override
-            public void onResponse(Call<String> call, Response<String> response) {
+            public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
                 if (response.isSuccessful() && "Success".equals(response.body())) {
                     onSuccess.run();
                     Toast.makeText(getApplicationContext(), getString(R.string.connection_succeeded), Toast.LENGTH_LONG).show();
@@ -411,7 +406,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             }
 
             @Override
-            public void onFailure(Call<String> call, Throwable t) {
+            public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
                 Toast.makeText(getApplicationContext(), getString(R.string.failed_to_connect_check_your_internet), Toast.LENGTH_LONG).show();
             }
         });
@@ -420,7 +415,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void downloadData(){
         List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
 
-        if (allInventory.size() == 0){
+        if (allInventory.isEmpty()){
             deleteAllData();
             download();
         } else {
@@ -441,6 +436,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                 .show();
     }
 
+    @SuppressLint("SetTextI18n")
     private void updateProgress() {
         runOnUiThread(() -> {
             progress += 20;
@@ -460,17 +456,14 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         fetchLocations();
         fetchStatus();
         fetchInventoryH();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (!NetworkUtils.isNetworkConnected(HomeActivity.this)) {
-                    deleteAllData();
-                    hideProgressBar();
-                    Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_downloading), Toast.LENGTH_LONG).show();
-                } else {
-                    hideProgressBar();
-                    Toast.makeText(getApplicationContext(), getString(R.string.data_downloaded_successfully), Toast.LENGTH_LONG).show();
-                }
+        handler.postDelayed(() -> {
+            if (!NetworkUtils.isNetworkConnected(HomeActivity.this)) {
+                deleteAllData();
+                hideProgressBar();
+                Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_downloading), Toast.LENGTH_LONG).show();
+            } else {
+                hideProgressBar();
+                Toast.makeText(getApplicationContext(), getString(R.string.data_downloaded_successfully), Toast.LENGTH_LONG).show();
             }
         }, 5000);
     }
@@ -555,7 +548,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
 
-        List<Item> test = App.get().getDB().itemDao().getAllItems2();
         List<Item> allItems = App.get().getDB().itemDao().getAllItems();
         if (allItems.isEmpty()) {
             Toast.makeText(getApplicationContext(), getString(R.string.no_data_to_upload), Toast.LENGTH_LONG).show();
@@ -599,7 +591,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         hideProgressBar();
     }
 
-    private List getItemsUpload (){
+    private List<UploadItems> getItemsUpload (){
         List<Item> allItems = App.get().getDB().itemDao().getAllItems();
         List <UploadItems> uploadData = new ArrayList<>();
         for (Item item : allItems) {
@@ -614,7 +606,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         return uploadData;
     }
 
-    private List getInevntoryUpload (){
+    private List<UploadInventory> getInevntoryUpload (){
         List<Inventory> allInventory = App.get().getDB().inventoryDao().getAllInventories();
         List <UploadInventory> uploadData = new ArrayList<>();
         for (Inventory inventory : allInventory) {
@@ -634,46 +626,42 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
     private void uploadItems() {
         new Thread(() -> {
             List<UploadItems> itemsUpload = getItemsUpload();
-            runOnUiThread(() -> {
-                apiService.uploadAssignedAssetsTag(itemsUpload).enqueue(new Callback<String>() {
-                    @Override
-                    public void onResponse(Call<String> call, Response<String> response) {
-                        if (response.isSuccessful() && "Success".equals(response.body())) {
-                            isUploadItems = true;
-                        }
-                        checkUploadCompletion();
+            runOnUiThread(() -> apiService.uploadAssignedAssetsTag(itemsUpload).enqueue(new Callback<String>() {
+                @Override
+                public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
+                    if (response.isSuccessful() && "Success".equals(response.body())) {
+                        isUploadItems = true;
                     }
+                    checkUploadCompletion();
+                }
 
-                    @Override
-                    public void onFailure(Call<String> call, Throwable t) {
-                        Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_uploading), Toast.LENGTH_LONG).show();
-                        hideProgressBar();
-                    }
-                });
-            });
+                @Override
+                public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
+                    Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_uploading), Toast.LENGTH_LONG).show();
+                    hideProgressBar();
+                }
+            }));
         }).start();
     }
 
     private void uploadInventory() {
         new Thread(() -> {
             List<UploadInventory> inventoryUpload = getInevntoryUpload();
-            runOnUiThread(() -> {
-                apiService.uploadInventory(inventoryUpload).enqueue(new Callback<String>() {
-                    @Override
-                    public void onResponse(Call<String> call, Response<String> response) {
-                        if (response.isSuccessful() && "Success".equals(response.body())) {
-                            isUploadInventories = true;
-                        }
-                        checkUploadCompletion();
+            runOnUiThread(() -> apiService.uploadInventory(inventoryUpload).enqueue(new Callback<String>() {
+                @Override
+                public void onResponse(@NonNull Call<String> call, @NonNull Response<String> response) {
+                    if (response.isSuccessful() && "Success".equals(response.body())) {
+                        isUploadInventories = true;
                     }
+                    checkUploadCompletion();
+                }
 
-                    @Override
-                    public void onFailure(Call<String> call, Throwable t) {
-                        Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_uploading), Toast.LENGTH_LONG).show();
-                        hideProgressBar();
-                    }
-                });
-            });
+                @Override
+                public void onFailure(@NonNull Call<String> call, @NonNull Throwable t) {
+                    Toast.makeText(getApplicationContext(), getString(R.string.internet_disconnected_while_uploading), Toast.LENGTH_LONG).show();
+                    hideProgressBar();
+                }
+            }));
         }).start();
     }
 
@@ -735,4 +723,33 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
         }
     }
+
+    private void registerBluetoothReceiver() {
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(bluetoothStateReceiver, filter);
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            unregisterReceiver(bluetoothStateReceiver);
+        } catch (IllegalArgumentException ignored) {}
+        super.onDestroy();
+    }
+
+    private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+                switch (state) {
+                    case BluetoothAdapter.STATE_OFF:
+                        Toast.makeText(context, getString(R.string.bluetoth_off_disconnect), Toast.LENGTH_SHORT).show();
+                        rfidHandler.closeAndResetConnection();
+                        break;
+                }
+            }
+        }
+    };
 }

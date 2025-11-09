@@ -83,6 +83,7 @@
     <string name="connecting_to_rfid_reader">الاتصال بقارئ RFID</string>
     <string name="rfid_reader_disappeared">اختفى قارئ RFID</string>
     <string name="disconnecting_reader">قطع الاتصال مع القارئ</string>
+    <string name="bluetoth_off_disconnect">البلوتوث قد اغلق. جاري فصل القارئ</string>
     <string name="bluetooth_disabled">البلوتوث غير مفعل. قم بتفعيله للاتصال بـ RFID</string>
     <string name="bluetooth_turned_off">البلوتوث مغلق. تحتاج إلى تفعيله</string>
     <string name="confirm">تأكيد</string>

@@ -1,14 +1,11 @@
 package com.AssetTrckingRFID.Tables;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
-
-import java.io.ByteArrayOutputStream;
 
 @Entity(tableName = "inventory")
 public class Inventory {
@@ -175,40 +172,20 @@ public class Inventory {
         return InventoryID;
     }
 
-    public void setInventoryID(int inventoryID) {
-        InventoryID = inventoryID;
-    }
-
     public String getInventoryDate() {
         return InventoryDate;
-    }
-
-    public void setInventoryDate(String inventoryDate) {
-        InventoryDate = inventoryDate;
     }
 
     public int getUserID() {
         return UserID;
     }
 
-    public void setUserID(int userID) {
-        UserID = userID;
-    }
-
     public int getItemID() {
         return ItemID;
     }
 
-    public void setItemID(int itemID) {
-        ItemID = itemID;
-    }
-
     public String getItemBarcode() {
         return ItemBarcode;
-    }
-
-    public void setItemBarcode(String itemBarcode) {
-        ItemBarcode = itemBarcode;
     }
 
     public String getRemark() {
@@ -223,24 +200,12 @@ public class Inventory {
         return CategoryId;
     }
 
-    public void setCategoryId(String categoryId) {
-        CategoryId = categoryId;
-    }
-
     public String getCategoryDesc() {
         return CategoryDesc;
     }
 
-    public void setCategoryDesc(String categoryDesc) {
-        CategoryDesc = categoryDesc;
-    }
-
     public int getStatusID() {
         return StatusID;
-    }
-
-    public void setStatusID(int statusID) {
-        StatusID = statusID;
     }
 
     public String getLocationID() {
@@ -255,195 +220,85 @@ public class Inventory {
         return LocationDesc;
     }
 
-    public void setLocationDesc(String locationDesc) {
-        LocationDesc = locationDesc;
-    }
-
     public String getFullLocationDesc() {
         return FullLocationDesc;
-    }
-
-    public void setFullLocationDesc(String fullLocationDesc) {
-        FullLocationDesc = fullLocationDesc;
     }
 
     public boolean isScanned() {
         return Scanned;
     }
 
-    public void setScanned(boolean scanned) {
-        Scanned = scanned;
-    }
-
     public boolean isMissing() {
         return Missing;
-    }
-
-    public void setMissing(boolean missing) {
-        Missing = missing;
     }
 
     public boolean isManual() {
         return Manual;
     }
 
-    public void setManual(boolean manual) {
-        Manual = manual;
-    }
-
     public boolean isReallocated() {
         return Reallocated;
-    }
-
-    public void setReallocated(boolean reallocated) {
-        Reallocated = reallocated;
     }
 
     public String getOldLocationID() {
         return OldLocationID;
     }
 
-    public void setOldLocationID(String oldLocationID) {
-        OldLocationID = oldLocationID;
-    }
-
     public String getOldLocationDesc() {
         return OldLocationDesc;
-    }
-
-    public void setOldLocationDesc(String oldLocationDesc) {
-        OldLocationDesc = oldLocationDesc;
     }
 
     public String getOldFullLocationDesc() {
         return OldFullLocationDesc;
     }
 
-    public void setOldFullLocationDesc(String oldFullLocationDesc) {
-        OldFullLocationDesc = oldFullLocationDesc;
-    }
-
     public boolean isStatusUpdated() {
         return StatusUpdated;
-    }
-
-    public void setStatusUpdated(boolean statusUpdated) {
-        StatusUpdated = statusUpdated;
     }
 
     public boolean isReallocatedApplied() {
         return ReallocatedApplied;
     }
 
-    public void setReallocatedApplied(boolean reallocatedApplied) {
-        ReallocatedApplied = reallocatedApplied;
-    }
-
     public boolean isStatusApplied() {
         return StatusApplied;
-    }
-
-    public void setStatusApplied(boolean statusApplied) {
-        StatusApplied = statusApplied;
     }
 
     public boolean isMissingApplied() {
         return MissingApplied;
     }
 
-    public void setMissingApplied(boolean missingApplied) {
-        MissingApplied = missingApplied;
-    }
-
     public boolean IsChecked() {
         return IsChecked;
     }
 
-    public void setIsChecked(boolean isChecked) {
-        IsChecked = isChecked;
-    }
 
     public boolean isRegistered() {
         return Registered;
-    }
-
-    public void setRegistered(boolean registered) {
-        Registered = registered;
     }
 
     public int getCreatedBy() {
         return CreatedBy;
     }
 
-    public void setCreatedBy(int createdBy) {
-        CreatedBy = createdBy;
-    }
-
     public String getCreationDate() {
         return CreationDate;
-    }
-
-    public void setCreationDate(String creationDate) {
-        CreationDate = creationDate;
     }
 
     public int getModifiedBy() {
         return ModifiedBy;
     }
 
-    public void setModifiedBy(int modifiedBy) {
-        ModifiedBy = modifiedBy;
-    }
-
     public String getModificationDate() {
         return ModificationDate;
-    }
-
-    public void setModificationDate(String modificationDate) {
-        ModificationDate = modificationDate;
     }
 
     public int getReasonID() {
         return ReasonID;
     }
 
-    public void setReasonID(int reasonID) {
-        ReasonID = reasonID;
-    }
-
     public String getTagId() {
         return TagId;
     }
 
-    public void setTagId(String tagId) {
-        TagId = tagId;
-    }
-
-    public Bitmap getImage() {
-        return image = byteArrayToBitmap(imageData);
-    }
-
-    public void setImage(Bitmap image) {
-        this.image = image;
-        this.imageData = bitmapToByteArray(image);
-    }
-
-    public byte[] getImageData() {
-        return imageData;
-    }
-
-    public void setImageData(byte[] imageData) {
-        this.imageData = imageData;
-        this.image = byteArrayToBitmap(imageData);
-    }
-
-    private byte[] bitmapToByteArray(Bitmap bitmap) {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-        return stream.toByteArray();
-    }
-
-    private Bitmap byteArrayToBitmap(byte[] byteArray) {
-        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-    }
 }

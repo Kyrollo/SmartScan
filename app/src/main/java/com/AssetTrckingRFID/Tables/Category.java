@@ -17,17 +17,18 @@ public class Category {
     public Category() {
     }
 
-    public Category(String categoryID, String categoryDesc) {
+    public Category(@NonNull String categoryID, String categoryDesc) {
         CategoryID = categoryID;
         CategoryDesc = categoryDesc;
     }
 
     // Getters and Setters
+    @NonNull
     public String getCategoryID() {
         return CategoryID;
     }
 
-    public void setCategoryID(String categoryID) {
+    public void setCategoryID(@NonNull String categoryID) {
         CategoryID = categoryID;
     }
 

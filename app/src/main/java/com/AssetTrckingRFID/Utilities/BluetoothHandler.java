@@ -374,23 +374,18 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         if (isReaderConnected()) return;
         if (isConnecting) return;
         isConnecting = true;
-        new ConnectionTask(userInitiatedConnect).execute();
+        new ConnectionTask().execute();
     }
 
     private class ConnectionTask extends AsyncTask<Void, Void, Boolean> {
-        private String errorMessage = "";
-        private final boolean showUi;
 
-        ConnectionTask(boolean showUi) {
-            this.showUi = showUi;
-        }
+        ConnectionTask() {}
 
         @Override
         protected Boolean doInBackground(Void... voids) {
             Log.d(TAG, "ConnectionTask");
             GetAvailableReader();
             if (reader == null) {
-                errorMessage = getCurrentContext().getString(R.string.rfid_not_connected);
                 return false;
             }
             return connect();
@@ -568,10 +563,6 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         }
     }
 
-//    public void assignBluetoothConnectionContext(BluetoothConnectionActivity bluetoothConnectionActivity) {
-//        updateContext(bluetoothConnectionActivity);
-//    }
-
     public void assignScanItemsContext(ScanItems scanItemsActivity) {
         updateContext(scanItemsActivity);
     }
@@ -621,12 +612,6 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         if (isReaderConnected()) {
             reader.getHostName();
         }
-    }
-
-    public void onDestroy() {
-        unregisterBluetoothStateReceiver();
-        dispose();
-        App.get().setRfidReader(null);
     }
 
     public void setupScannerSDK() {
@@ -694,29 +679,6 @@ public class BluetoothHandler implements IDcsSdkApiDelegate, Readers.RFIDReaderE
         }
 
         closeAndResetConnection();
-    }
-
-    private synchronized void dispose() {
-        Context ctx = getCurrentContext();
-        // Notify UI that disconnection is starting
-        if (ctx instanceof BluetoothConnectionActivity) {
-            BluetoothConnectionActivity activity = (BluetoothConnectionActivity) ctx;
-            activity.updateRFIDStatus(ctx.getString(R.string.disconnecting_reader));
-        } else if (ctx instanceof ScanItems) {
-            ScanItems activity = (ScanItems) ctx;
-            // Can add status update for ScanItems if needed
-        }
-
-        disconnect();
-        try {
-            if (reader != null) {
-                reader = null;
-                readers.Dispose();
-                readers = null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public synchronized void performInventory() {

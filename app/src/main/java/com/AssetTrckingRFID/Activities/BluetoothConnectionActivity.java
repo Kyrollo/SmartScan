@@ -27,7 +27,6 @@ import com.zebra.rfid.api3.TagData;
 
 public class BluetoothConnectionActivity extends AppCompatActivity implements BluetoothHandler.RFIDHandlerBluetoothListener {
     public TextView textViewStatusRFID;
-    private ImageView refreshConnection;
     private BluetoothHandler rfidHandler;
     private BluetoothAdapter bluetoothAdapter;
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
@@ -49,7 +48,7 @@ public class BluetoothConnectionActivity extends AppCompatActivity implements Bl
 
     private void initViews() {
         textViewStatusRFID = findViewById(R.id.textViewStatusRFID);
-        refreshConnection = findViewById(R.id.refreshConnection);
+        ImageView refreshConnection = findViewById(R.id.refreshConnection);
 
         loadingDialog = new LoadingDialog(this);
 

@@ -17,6 +17,7 @@ public class LoadingDialog {
         activity = myActivity;
     }
 
+    @SuppressLint("InflateParams")
     public void startLoadingDialog(){
         if(flag == 0 && isActivityValid()) {
             flag++;

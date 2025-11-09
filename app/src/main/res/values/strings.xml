@@ -82,6 +82,7 @@
     <string name="connecting_to_rfid_reader">Connecting to RFID reader</string>
     <string name="rfid_reader_disappeared">RFID reader disappeared</string>
     <string name="disconnecting_reader">Disconnecting reader</string>
+    <string name="bluetoth_off_disconnect">Bluetooth turned off. Disconnecting reader</string>
     <string name="asset_rfid_tracking">Asset Tracking RFID</string>
     <string name="bluetooth_disabled">Bluetooth is not enabled. Enable it to connect to RFID</string>
     <string name="bluetooth_turned_off">Bluetooth is turned off. You need to enabled it</string>

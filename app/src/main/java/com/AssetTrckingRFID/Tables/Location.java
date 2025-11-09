@@ -29,7 +29,7 @@ public class Location {
     public Location() {
     }
 
-    public Location(String locationID, String locationBarCode, String locationDesc, boolean hasParent, String locationParentID, String fullLocationDesc) {
+    public Location(@NonNull String locationID, String locationBarCode, String locationDesc, boolean hasParent, String locationParentID, String fullLocationDesc) {
         LocationID = locationID;
         LocationBarCode = locationBarCode;
         LocationDesc = locationDesc;
@@ -40,11 +40,12 @@ public class Location {
 
     // Getters and Setters
 
+    @NonNull
     public String getLocationID() {
         return LocationID;
     }
 
-    public void setLocationID(String locationID) {
+    public void setLocationID(@NonNull String locationID) {
         LocationID = locationID;
     }
 

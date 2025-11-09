@@ -19,7 +19,6 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,11 +61,9 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     private TextView allCountData, registeredCountData, unregisteredCountData, missingCountData;
     private TabLayout tabLayout;
     private Button btnEnd;
-    private FrameLayout progressBarLayout;
 
     // RFID
     private BluetoothHandler rfidHandler;
-    private BluetoothAdapter bluetoothAdapter;
 
     // Navigation data
     public String locationID, startDateStr;
@@ -90,7 +87,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     private final List<Inventory> emptyListForAdapter = new ArrayList<>();
 
     private Inventory randomInventory;
-    private int lastSelectedTabIndex = 2;
 
     private static final int BLUETOOTH_PERMISSION_REQUEST_CODE = 100;
     private static final int REQUEST_ENABLE_BLUETOOTH = 400;
@@ -100,7 +96,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
 
     private LoadingDialog loadingDialog;
 
-    private AlertDialog.Builder builder;
     AlertDialog dialog;
     private int process = 0;
 
@@ -174,7 +169,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
             hideProgressBar();
             fetchDataFromDatabase();
 
-            openTab(2);
+            openTab();
             missingTrx();
 
             IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
@@ -234,7 +229,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
     }
 
     private void checkBluetoothAndConnect() {
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (bluetoothAdapter == null) {
             Toast.makeText(this, R.string.not_support_bluetooth, Toast.LENGTH_SHORT).show();
@@ -288,7 +283,6 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         missingCountData = findViewById(R.id.missingCountData);
         unregisteredCountData = findViewById(R.id.unregisteredCountData);
         btnEnd = findViewById(R.id.btnEnd);
-        progressBarLayout = findViewById(R.id.progressBarLayout);
         recyclerView.setVisibility(View.VISIBLE);
 
         loadingDialog = new LoadingDialog(this);
@@ -311,10 +305,9 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         });
     }
 
-    private void openTab(int tabPosition) {
-        TabLayout.Tab tab = tabLayout.getTabAt(tabPosition);
+    private void openTab() {
+        TabLayout.Tab tab = tabLayout.getTabAt(2);
         if (tab != null) tab.select();
-        lastSelectedTabIndex = tabPosition;
     }
 
     private void fetchDataFromDatabase() { new FetchDataFromDatabaseTask().execute(); }
@@ -563,7 +556,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
             return;
         }
 
-        builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString((R.string.validation_required)));
         builder.setMessage(getString(R.string.please_take_a_photo_of_the_following_item) +
                 getString(R.string.item_barcode) + item.getItemBarCode() + "\n\n" +
@@ -607,6 +600,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
         if (uri != null) {
             try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                assert out != null;
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
                 Toast.makeText(this, R.string.image_saved, Toast.LENGTH_SHORT).show();
             } catch (IOException e) {
@@ -700,7 +694,7 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         }
 
         if (requestCode == REQUEST_WRITE_STORAGE) {
-            if (grantResults.length <= 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 requestPermission();
             }
         }
@@ -753,8 +747,8 @@ public class ScanItems extends AppCompatActivity implements BluetoothHandler.RFI
         @Override
         protected Void doInBackground(Void... voids) {
             for (TagData[] td : tagDataArray) {
-                for (int i = 0; i < td.length; i++) {
-                    String tagId = td[i].getTagID();
+                for (TagData tagData : td) {
+                    String tagId = tagData.getTagID();
                     if (tagId == null || tagId.isEmpty()) continue;
 
                     if (uniqueTagIDs.add(tagId)) {

@@ -1,13 +1,18 @@
 package com.AssetTrckingRFID.Activities;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.AssetTrckingRFID.App;
 import com.AssetTrckingRFID.R;
 import com.AssetTrckingRFID.Tables.Location;
+import com.AssetTrckingRFID.Utilities.BluetoothHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,10 +29,13 @@ public class LocationActivity extends AppCompatActivity {
     private Spinner spinner1, spinner2, spinner3, spinner4;
     private Button btnStartInventory;
     private List<Location> parentLocations, locations2, locations3, locations4;
-    private List<String> locationSpinner1, locationSpinner2, locationSpinner3, locationSpinner4;
+    private List<String> locationSpinner2;
+    private List<String> locationSpinner3;
+    private List<String> locationSpinner4;
     private String lastChosenLocationId;
     private String startDateStr;
     private int userId, inventoryId;
+    private BluetoothHandler rfidHandler;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -37,6 +46,7 @@ public class LocationActivity extends AppCompatActivity {
 
         initializePage();
         retrieveData();
+        registerBluetoothReceiver();
 
         btnStartInventory.setOnClickListener(v -> {
             Intent intent = new Intent(this, ScanItems.class);
@@ -59,8 +69,12 @@ public class LocationActivity extends AppCompatActivity {
                 }
                 String selectedItem = (String) parent.getItemAtPosition(position);
                 Location selectedLocation = findLocationByDesc(parentLocations, selectedItem);
-                lastChosenLocationId = selectedLocation.getLocationID();
-                locations2 = App.get().getDB().locationDao().getAllLocationByParentID(selectedLocation.getLocationID());
+                if (selectedLocation != null) {
+                    lastChosenLocationId = selectedLocation.getLocationID();
+                }
+                if (selectedLocation != null) {
+                    locations2 = App.get().getDB().locationDao().getAllLocationByParentID(selectedLocation.getLocationID());
+                }
                 if (locations2 == null || locations2.isEmpty()) {
                     btnStartInventory.setVisibility(View.VISIBLE);
                     spinner2.setVisibility(View.GONE);
@@ -103,8 +117,12 @@ public class LocationActivity extends AppCompatActivity {
                 }
                 String selectedItem = (String) parent.getItemAtPosition(position);
                 Location selectedLocation = findLocationByDesc(locations2, selectedItem);
-                lastChosenLocationId = selectedLocation.getLocationID();
-                locations3 = App.get().getDB().locationDao().getAllLocationByParentID(selectedLocation.getLocationID());
+                if (selectedLocation != null) {
+                    lastChosenLocationId = selectedLocation.getLocationID();
+                }
+                if (selectedLocation != null) {
+                    locations3 = App.get().getDB().locationDao().getAllLocationByParentID(selectedLocation.getLocationID());
+                }
                 if (locations3 == null || locations3.isEmpty()) {
                     btnStartInventory.setVisibility(View.VISIBLE);
                     spinner3.setVisibility(View.GONE);
@@ -143,8 +161,12 @@ public class LocationActivity extends AppCompatActivity {
                 }
                 String selectedItem = (String) parent.getItemAtPosition(position);
                 Location selectedLocation = findLocationByDesc(locations3, selectedItem);
-                lastChosenLocationId = selectedLocation.getLocationID();
-                locations4 = App.get().getDB().locationDao().getAllLocationByParentID(selectedLocation.getLocationID());
+                if (selectedLocation != null) {
+                    lastChosenLocationId = selectedLocation.getLocationID();
+                }
+                if (selectedLocation != null) {
+                    locations4 = App.get().getDB().locationDao().getAllLocationByParentID(selectedLocation.getLocationID());
+                }
                 if (locations4 == null || locations4.isEmpty()) {
                     btnStartInventory.setVisibility(View.VISIBLE);
                     spinner4.setVisibility(View.GONE);
@@ -179,7 +201,9 @@ public class LocationActivity extends AppCompatActivity {
                 }
                 String selectedItem = (String) parent.getItemAtPosition(position);
                 Location selectedLocation = findLocationByDesc(locations4, selectedItem);
-                lastChosenLocationId = selectedLocation.getLocationID();
+                if (selectedLocation != null) {
+                    lastChosenLocationId = selectedLocation.getLocationID();
+                }
                 btnStartInventory.setVisibility(View.VISIBLE);
             }
 
@@ -191,6 +215,8 @@ public class LocationActivity extends AppCompatActivity {
     }
 
     private void initializePage(){
+        rfidHandler = new BluetoothHandler();
+
         spinner1 = findViewById(R.id.spinner1);
         spinner2 = findViewById(R.id.spinner2);
         spinner3 = findViewById(R.id.spinner3);
@@ -203,7 +229,7 @@ public class LocationActivity extends AppCompatActivity {
         btnStartInventory.setVisibility(View.GONE);
 
         parentLocations = App.get().getDB().locationDao().getAllParents();
-        locationSpinner1 = new ArrayList<>();
+        List<String> locationSpinner1 = new ArrayList<>();
         locationSpinner1.add(getString(R.string.choose_location));
 
         for (Location location : parentLocations) {
@@ -231,4 +257,33 @@ public class LocationActivity extends AppCompatActivity {
         }
         return null;
     }
+
+    private void registerBluetoothReceiver() {
+        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        registerReceiver(bluetoothStateReceiver, filter);
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            unregisterReceiver(bluetoothStateReceiver);
+        } catch (IllegalArgumentException ignored) {}
+        super.onDestroy();
+    }
+
+    private final BroadcastReceiver bluetoothStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+                switch (state) {
+                    case BluetoothAdapter.STATE_OFF:
+                        Toast.makeText(context, getString(R.string.bluetoth_off_disconnect), Toast.LENGTH_SHORT).show();
+                        rfidHandler.closeAndResetConnection();
+                        break;
+                }
+            }
+        }
+    };
 }
